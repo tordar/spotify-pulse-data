@@ -80,7 +80,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add data/merged-streaming-history/ data/cleaned-data/
+          # Require at least one merged file so we never commit deletion-only (gitignore would skip new file without -f)
+          MERGED_COUNT=$(ls -1 data/merged-streaming-history/merged-streaming-history-*.json 2>/dev/null | wc -l)
+          if [ "$MERGED_COUNT" -eq 0 ]; then
+            echo "::error::No merged-streaming-history file found after merge; skipping commit to avoid deleting data"
+            exit 1
+          fi
+          git add -f data/merged-streaming-history/ data/cleaned-data/
           git diff --staged --quiet || git commit -m "Spotify sync $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           
       - name: Push changes
