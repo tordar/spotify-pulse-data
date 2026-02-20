@@ -86,7 +86,7 @@ jobs:
       - name: Push changes
         if: steps.check-tracks.outcome == 'success'
         run: |
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git master
+          git push https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git master
           
       - name: Trigger Vercel deployment
         if: steps.check-tracks.outcome == 'success'  # Only deploy if new tracks were processed
