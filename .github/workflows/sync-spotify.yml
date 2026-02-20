@@ -46,6 +46,8 @@ jobs:
         run: |
           if [ "${{ steps.fetch-plays.outcome }}" != "success" ]; then
             echo "has_new_tracks=false" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.fetch-plays.outputs.has_new_tracks }}" = "true" ]; then
+            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
           elif [ -f temp/fetch-result.txt ] && grep -q "HAS_NEW_TRACKS=true" temp/fetch-result.txt; then
             echo "has_new_tracks=true" >> $GITHUB_OUTPUT
           else
