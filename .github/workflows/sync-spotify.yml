@@ -61,12 +61,10 @@ jobs:
           name: recent-plays
           path: temp/temp-recent-plays-*.json
 
-  merge-and-push:
+  merge-data:
     needs: fetch-check
     if: needs.fetch-check.outputs.has_new_tracks == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -100,6 +98,36 @@ jobs:
       - name: Merge recent data with merged streaming history
         run: npm run merge-recent-data
 
+      - name: Upload merged data
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-data
+          path: data/merged-streaming-history/
+
+  generate-files:
+    needs: [fetch-check, merge-data]
+    if: needs.fetch-check.outputs.has_new_tracks == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download merged data
+        uses: actions/download-artifact@v4
+        with:
+          name: merged-data
+
       - name: Generate cleaned and consolidated data files
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
@@ -109,6 +137,31 @@ jobs:
 
       - name: Add podcast data to stats
         run: npm run add-podcast-data
+
+      - name: Upload data for commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-data
+          path: |
+            data/merged-streaming-history/
+            data/cleaned-data/
+
+  commit-and-push:
+    needs: [fetch-check, generate-files]
+    if: needs.fetch-check.outputs.has_new_tracks == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Download sync data
+        uses: actions/download-artifact@v4
+        with:
+          name: sync-data
 
       - name: Pull latest changes
         run: |
@@ -121,7 +174,7 @@ jobs:
           git config --local user.name "GitHub Action"
           MERGED_COUNT=$(ls -1 data/merged-streaming-history/merged-streaming-history-*.json 2>/dev/null | wc -l)
           if [ "$MERGED_COUNT" -eq 0 ]; then
-            echo "::error::No merged-streaming-history file found after merge; skipping commit to avoid deleting data"
+            echo "::error::No merged-streaming-history file found; skipping commit"
             exit 1
           fi
           git add -f data/merged-streaming-history/ data/cleaned-data/
