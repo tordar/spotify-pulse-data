@@ -424,7 +424,7 @@ export default function SettingsPage() {
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_ID</code></li>
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_SECRET</code></li>
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_REFRESH_TOKEN</code></li>
-                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">PERSONAL_ACCESS_TOKEN</code> (GitHub PAT with <code className="text-foreground/80">repo</code> scope)</li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">PERSONAL_ACCESS_TOKEN</code> (GitHub profile → Settings → Developer settings → Personal access tokens → Tokens (classic) - with repo scope)</li>
                     </ul>
                   </div>
 
@@ -437,7 +437,7 @@ export default function SettingsPage() {
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_ID</code></li>
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_SECRET</code></li>
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_REFRESH_TOKEN</code></li>
-                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">GITHUB_TOKEN</code> (same PAT as above)</li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">GITHUB_TOKEN</code> (same GitHub PAT as above)</li>
                       <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">UPLOAD_SECRET</code> (a secret only you know; you enter it in the upload form to authorize uploads)</li>
                     </ul>
                   </div>
