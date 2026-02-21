@@ -122,75 +122,121 @@ export default function SettingsPage() {
     setUploadResult(null)
   }
 
+  const FILES_PER_REQUEST = 3
+
+  const buildFormDataForChunk = async (
+    chunk: File[]
+  ): Promise<FormData> => {
+    const formData = new FormData()
+    const useCompression = chunk.some((f) => f.size >= COMPRESS_THRESHOLD_BYTES)
+    if (useCompression) {
+      for (const file of chunk) {
+        if (!isValidUploadFilename(file.name)) continue
+        const compressed = await gzipFile(file)
+        formData.append('compressed', arrayBufferToBase64(compressed))
+        formData.append('filename', file.name)
+      }
+    } else {
+      chunk.forEach((f) => formData.append('files', f))
+    }
+    return formData
+  }
+
   const submitUpload = async () => {
     if (uploadFiles.length === 0 || !uploadSecret.trim()) return
     setUploading(true)
     setUploadResult(null)
+    const allUploaded: string[] = []
+    const allRejected: Array<{ name: string; reason: string }> = []
+    const secret = uploadSecret.trim()
+    const headers = { 'X-Upload-Secret': secret }
+
     try {
-      const formData = new FormData()
-      const useCompression = uploadFiles.some((f) => f.size >= COMPRESS_THRESHOLD_BYTES)
+      for (let i = 0; i < uploadFiles.length; i += FILES_PER_REQUEST) {
+        const chunk = uploadFiles.slice(i, i + FILES_PER_REQUEST)
+        let formData = await buildFormDataForChunk(chunk)
+        let res = await fetch('/api/upload-history', {
+          method: 'POST',
+          body: formData,
+          headers,
+        })
+        let data = await res.json()
 
-      if (useCompression) {
-        for (const file of uploadFiles) {
-          if (!isValidUploadFilename(file.name)) continue
-          const compressed = await gzipFile(file)
-          formData.append('compressed', arrayBufferToBase64(compressed))
-          formData.append('filename', file.name)
+        if (res.status === 413 && chunk.length > 1) {
+          for (const file of chunk) {
+            const singleFormData = await buildFormDataForChunk([file])
+            res = await fetch('/api/upload-history', {
+              method: 'POST',
+              body: singleFormData,
+              headers,
+            })
+            data = await res.json()
+            if (res.ok) {
+              allUploaded.push(...(data.uploaded || []))
+              allRejected.push(...(data.rejected || []))
+            } else {
+              allRejected.push({
+                name: file.name,
+                reason: data.error || `Upload failed (${res.status})`,
+              })
+            }
+          }
+          continue
         }
-      } else {
-        uploadFiles.forEach((f) => formData.append('files', f))
+
+        if (res.status === 401) {
+          setUploadResult({
+            uploaded: allUploaded,
+            rejected: allRejected,
+            error: data.error || 'Invalid upload secret.',
+          })
+          return
+        }
+        if (res.status === 501) {
+          setUploadResult({
+            uploaded: allUploaded,
+            rejected: allRejected,
+            error: data.error || 'Upload not configured.',
+            notConfigured: true,
+          })
+          return
+        }
+        if (res.status === 413) {
+          setUploadResult({
+            uploaded: allUploaded,
+            rejected: allRejected,
+            error:
+              chunk.length === 1
+                ? 'Request too large even for a single file. Add the largest file(s) to the repo manually.'
+                : 'Request too large. Retrying one file at a time failed.',
+          })
+          return
+        }
+        if (!res.ok) {
+          setUploadResult({
+            uploaded: allUploaded,
+            rejected: allRejected,
+            error: data.error || 'Upload failed.',
+          })
+          return
+        }
+        allUploaded.push(...(data.uploaded || []))
+        allRejected.push(...(data.rejected || []))
       }
 
-      const res = await fetch('/api/upload-history', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Upload-Secret': uploadSecret.trim() },
-      })
-      const data = await res.json()
-      if (res.status === 401) {
-        setUploadResult({
-          uploaded: [],
-          rejected: [],
-          error: data.error || 'Invalid upload secret.',
-        })
-        return
-      }
-      if (res.status === 413) {
-        setUploadResult({
-          uploaded: [],
-          rejected: [],
-          error:
-            'Request too large. Large files are compressed automatically; if you still see this, try fewer or smaller files, or add them to the repo manually.',
-        })
-        return
-      }
-      if (res.status === 501) {
-        setUploadResult({
-          uploaded: [],
-          rejected: [],
-          error: data.error || 'Upload not configured.',
-          notConfigured: true,
-        })
-        return
-      }
-      if (!res.ok) {
-        setUploadResult({
-          uploaded: [],
-          rejected: [],
-          error: data.error || 'Upload failed.',
-        })
-        return
-      }
       setUploadResult({
-        uploaded: data.uploaded || [],
-        rejected: data.rejected || [],
-        message: data.message,
+        uploaded: allUploaded,
+        rejected: allRejected,
+        message:
+          allUploaded.length > 0
+            ? `Uploaded ${allUploaded.length} file(s) in ${Math.ceil(uploadFiles.length / FILES_PER_REQUEST)} commit(s).`
+            : undefined,
       })
-      setUploadFiles([])
+      if (allUploaded.length > 0) setUploadFiles([])
     } catch {
       setUploadResult({
-        uploaded: [],
-        rejected: [],
+        uploaded: allUploaded,
+        rejected: allRejected,
         error: 'Failed to upload files.',
       })
     } finally {
@@ -403,7 +449,7 @@ export default function SettingsPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <label htmlFor="upload-secret" className="text-sm font-medium">
                 Upload secret
               </label>
@@ -415,17 +461,11 @@ export default function SettingsPage() {
                   setUploadSecret(e.target.value)
                   setUploadResult(null)
                 }}
-                placeholder="Enter the value of UPLOAD_SECRET"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Upload secret"
+                className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 autoComplete="off"
               />
-              <p className="text-xs text-muted-foreground">
-                Set in Vercel (and web-app/.env.local for local) as <code className="bg-muted px-1 rounded">UPLOAD_SECRET</code>. Only you should know this value.
-              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Files larger than ~3.5 MB are compressed before upload to stay under hosting limits.
-            </p>
             <div
               onDrop={onDrop}
               onDragOver={onDragOver}
