@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const STREAMING_HISTORY_PREFIX = 'Streaming_History_Audio_'
 const STREAMING_HISTORY_SUFFIX = '.json'
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50MB per file
-const CONTENT_PATH_PREFIX = 'data/test/'
+const CONTENT_PATH_PREFIX = 'data/spotify-history/'
 
 function isValidFilename(name: string): boolean {
   return (
