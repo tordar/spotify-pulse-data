@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'crypto'
+import { gunzipSync } from 'zlib'
 import { NextRequest, NextResponse } from 'next/server'
 
 const STREAMING_HISTORY_PREFIX = 'Streaming_History_Audio_'
@@ -83,41 +84,83 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData()
-    const entries = Array.from(formData.entries()).filter(
-      (e): e is [string, File] => e[1] instanceof File
-    ) as [string, File][]
-    const rawFiles = entries.map(([, file]) => file).filter((f) => f.name && f.size > 0)
+    const rejected: { name: string; reason: string }[] = []
+    let validFiles: { name: string; contentBase64: string }[] = []
 
-    if (rawFiles.length === 0) {
+    const compressedList = formData.getAll('compressed') as string[]
+    const filenameList = formData.getAll('filename') as string[]
+
+    if (compressedList.length > 0 && compressedList.length === filenameList.length) {
+      for (let i = 0; i < compressedList.length; i++) {
+        const name = (filenameList[i] || '').trim()
+        const compressedBase64 = compressedList[i]
+        if (!name || !compressedBase64) continue
+        if (!isValidFilename(name)) {
+          rejected.push({
+            name,
+            reason: `Filename must match ${STREAMING_HISTORY_PREFIX}*.json`,
+          })
+          continue
+        }
+        try {
+          const compressed = Buffer.from(compressedBase64, 'base64')
+          const bytes = gunzipSync(compressed)
+          if (bytes.length > MAX_FILE_SIZE_BYTES) {
+            rejected.push({
+              name,
+              reason: `File exceeds ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB limit (after decompression)`,
+            })
+            continue
+            }
+          validFiles.push({
+            name,
+            contentBase64: bytes.toString('base64'),
+          })
+        } catch {
+          rejected.push({ name, reason: 'Invalid or corrupted gzip data' })
+        }
+      }
+    } else {
+      const entries = Array.from(formData.entries()).filter(
+        (e): e is [string, File] => e[1] instanceof File
+      ) as [string, File][]
+      const rawFiles = entries.map(([, file]) => file).filter((f) => f.name && f.size > 0)
+
+      if (rawFiles.length === 0) {
+        return NextResponse.json(
+          { error: 'No files provided.', uploaded: [], rejected: [] },
+          { status: 400 }
+        )
+      }
+
+      for (const file of rawFiles) {
+        if (!isValidFilename(file.name)) {
+          rejected.push({
+            name: file.name,
+            reason: `Filename must match ${STREAMING_HISTORY_PREFIX}*.json`,
+          })
+          continue
+        }
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          rejected.push({
+            name: file.name,
+            reason: `File exceeds ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB limit`,
+          })
+          continue
+        }
+        const bytes = await file.arrayBuffer()
+        validFiles.push({
+          name: file.name,
+          contentBase64: Buffer.from(bytes).toString('base64'),
+        })
+      }
+    }
+
+    if (validFiles.length === 0 && rejected.length === 0) {
       return NextResponse.json(
         { error: 'No files provided.', uploaded: [], rejected: [] },
         { status: 400 }
       )
-    }
-
-    const rejected: { name: string; reason: string }[] = []
-    const validFiles: { name: string; contentBase64: string }[] = []
-
-    for (const file of rawFiles) {
-      if (!isValidFilename(file.name)) {
-        rejected.push({
-          name: file.name,
-          reason: `Filename must match ${STREAMING_HISTORY_PREFIX}*.json`,
-        })
-        continue
-      }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        rejected.push({
-          name: file.name,
-          reason: `File exceeds ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB limit`,
-        })
-        continue
-      }
-      const bytes = await file.arrayBuffer()
-      validFiles.push({
-        name: file.name,
-        contentBase64: Buffer.from(bytes).toString('base64'),
-      })
     }
 
     if (validFiles.length === 0) {

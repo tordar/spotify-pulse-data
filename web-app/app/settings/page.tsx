@@ -75,6 +75,24 @@ export default function SettingsPage() {
   const isValidUploadFilename = (name: string) =>
     name.startsWith('Streaming_History_Audio_') && name.endsWith('.json')
 
+  // Vercel serverless request body limit ~4.5 MB; compress large files so payload stays under
+  const COMPRESS_THRESHOLD_BYTES = 3.5 * 1024 * 1024
+
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    const chunkSize = 8192
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+    }
+    return btoa(binary)
+  }
+
+  const gzipFile = async (file: File): Promise<ArrayBuffer> => {
+    const stream = file.stream().pipeThrough(new CompressionStream('gzip'))
+    return await new Response(stream).arrayBuffer()
+  }
+
   const onUploadFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter((f) => isValidUploadFilename(f.name))
     setUploadFiles((prev) => [...prev, ...files])
@@ -110,7 +128,19 @@ export default function SettingsPage() {
     setUploadResult(null)
     try {
       const formData = new FormData()
-      uploadFiles.forEach((f) => formData.append('files', f))
+      const useCompression = uploadFiles.some((f) => f.size >= COMPRESS_THRESHOLD_BYTES)
+
+      if (useCompression) {
+        for (const file of uploadFiles) {
+          if (!isValidUploadFilename(file.name)) continue
+          const compressed = await gzipFile(file)
+          formData.append('compressed', arrayBufferToBase64(compressed))
+          formData.append('filename', file.name)
+        }
+      } else {
+        uploadFiles.forEach((f) => formData.append('files', f))
+      }
+
       const res = await fetch('/api/upload-history', {
         method: 'POST',
         body: formData,
@@ -122,6 +152,15 @@ export default function SettingsPage() {
           uploaded: [],
           rejected: [],
           error: data.error || 'Invalid upload secret.',
+        })
+        return
+      }
+      if (res.status === 413) {
+        setUploadResult({
+          uploaded: [],
+          rejected: [],
+          error:
+            'Request too large. Large files are compressed automatically; if you still see this, try fewer or smaller files, or add them to the repo manually.',
         })
         return
       }
@@ -384,6 +423,9 @@ export default function SettingsPage() {
                 Set in Vercel (and web-app/.env.local for local) as <code className="bg-muted px-1 rounded">UPLOAD_SECRET</code>. Only you should know this value.
               </p>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Files larger than ~3.5 MB are compressed before upload to stay under hosting limits.
+            </p>
             <div
               onDrop={onDrop}
               onDragOver={onDragOver}
