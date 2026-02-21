@@ -406,21 +406,44 @@ export default function SettingsPage() {
                   </ol>
                 </section>
 
-                <section>
+                <section className="space-y-4">
                   <h3 className="flex items-center gap-2 font-semibold text-sm mb-2">
                     <Github className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
                     4. Add secrets and enable GitHub Actions
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="text-sm text-muted-foreground">
                     Add credentials in both GitHub (for Actions) and Vercel (for the app and in-app upload).
                   </p>
-                  <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-1 mb-2">
-                    <li><strong>GitHub</strong> (repo → Settings → Secrets and variables → Actions): add <code className="text-foreground/80">SPOTIFY_CLIENT_ID</code>, <code className="text-foreground/80">SPOTIFY_CLIENT_SECRET</code>, <code className="text-foreground/80">SPOTIFY_REFRESH_TOKEN</code>, <code className="text-foreground/80">PERSONAL_ACCESS_TOKEN</code> (GitHub PAT with <code className="text-foreground/80">repo</code> scope).</li>
-                    <li><strong>Vercel</strong> (Project → Settings → Environment Variables): add the same Spotify vars, plus <strong>required</strong> <code className="text-foreground/80">GITHUB_TOKEN</code> (same PAT), <code className="text-foreground/80">GITHUB_REPO_OWNER</code>, <code className="text-foreground/80">GITHUB_REPO_NAME</code>, and <code className="text-foreground/80">UPLOAD_SECRET</code> (a secret only you know; you enter it in the upload form to authorize uploads). Vercel may set repo owner/slug automatically.</li>
-                    <li>In the repo, open the <strong>Actions</strong> tab and ensure Actions are enabled.</li>
-                  </ol>
+
+                  <div className="space-y-3 pl-1">
+                    <p className="text-sm font-medium text-foreground">GitHub</p>
+                    <p className="text-sm text-muted-foreground">
+                      Repo → Settings → Secrets and variables → Actions. Add these repository secrets:
+                    </p>
+                    <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1.5">
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_ID</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_SECRET</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_REFRESH_TOKEN</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">PERSONAL_ACCESS_TOKEN</code> (GitHub PAT with <code className="text-foreground/80">repo</code> scope)</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3 pl-1">
+                    <p className="text-sm font-medium text-foreground">Vercel</p>
+                    <p className="text-sm text-muted-foreground">
+                      Project → Settings → Environment Variables. Add these five:
+                    </p>
+                    <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1.5">
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_ID</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_CLIENT_SECRET</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">SPOTIFY_REFRESH_TOKEN</code></li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">GITHUB_TOKEN</code> (same PAT as above)</li>
+                      <li><code className="text-foreground/80 bg-muted/70 px-1 rounded">UPLOAD_SECRET</code> (a secret only you know; you enter it in the upload form to authorize uploads)</li>
+                    </ul>
+                  </div>
+
                   <p className="text-sm text-muted-foreground">
-                    Workflows are already in the repo. Pushing to <code className="text-foreground/80">data/spotify-history/</code> triggers merge + generate; the sync workflow runs every 2 hours.
+                    In the repo, open the <strong>Actions</strong> tab and ensure Actions are enabled.
                   </p>
                 </section>
 

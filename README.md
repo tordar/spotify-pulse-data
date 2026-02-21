@@ -78,7 +78,7 @@ Add the same credentials in two places: **GitHub** (for Actions) and **Vercel** 
 **Vercel** (Project → Settings → Environment Variables):
 
 - **Required:** `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` (Now Playing, recently played).
-- **Required for Settings and upload:** `GITHUB_TOKEN` (same PAT with `repo` or `contents: write`), `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`, and `UPLOAD_SECRET` (a secret only you know; you enter it in the Settings upload form to authorize uploads). (Vercel may set `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG` automatically.)
+- **Required for Settings and upload:** `GITHUB_TOKEN` (same PAT with `repo` or `contents: write`) and `UPLOAD_SECRET` (a secret only you know; you enter it in the Settings upload form to authorize uploads). Repo owner/name are read from Vercel’s connection to your repo; you don’t need to set them.
 
 Then enable **Actions** in the repo’s **Actions** tab. Workflows are already in the repo; they run on push to `data/spotify-history/` (merge + generate) and on a schedule (sync recent plays every 2 hours).
 
@@ -208,10 +208,10 @@ After `add-podcast-data`, `detailed-stats-*.json` also includes podcast listenin
 | `SPOTIFY_CLIENT_SECRET` | Spotify app Client Secret | Yes (for sync / metadata) | Scripts, GitHub Actions |
 | `SPOTIFY_REFRESH_TOKEN` | Spotify refresh token | Yes (for sync / metadata) | Scripts, GitHub Actions |
 | `GITHUB_TOKEN` | GitHub PAT with `repo` or `contents: write` | Yes (for Settings sync status and in-app upload) | Web app (sync-status, upload-history) |
-| `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` | Repo owner and name | Yes (or use Vercel’s `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`) | Web app (sync-status, upload-history) |
+| `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` | Repo owner and name | No (Vercel sets these when you connect the repo) | Web app (sync-status, upload-history) |
 | `UPLOAD_SECRET` | Secret you enter in Settings to authorize uploads (only you should know it) | Yes (for in-app upload) | Web app (upload-history) |
 
-For **GitHub Actions**, set Spotify credentials and `PERSONAL_ACCESS_TOKEN` as **repository secrets**. For the **Vercel** app, set the same Spotify vars plus `GITHUB_TOKEN`, `GITHUB_REPO_OWNER`, and `GITHUB_REPO_NAME` so the Settings page and in-app upload work. Without Spotify credentials you can still process exported history; automatic sync and metadata enrichment will not work.
+For **GitHub Actions**, set Spotify credentials and `PERSONAL_ACCESS_TOKEN` as **repository secrets**. For the **Vercel** app, set the same Spotify vars plus `GITHUB_TOKEN` and `UPLOAD_SECRET` so the Settings page and in-app upload work. Without Spotify credentials you can still process exported history; automatic sync and metadata enrichment will not work.
 
 ## Troubleshooting
 
