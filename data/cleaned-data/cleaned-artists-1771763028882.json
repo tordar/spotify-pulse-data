@@ -4,7 +4,7 @@
     "consolidatedTotalArtists": 9114,
     "duplicatesRemoved": 6,
     "consolidationRate": 0.07,
-    "timestamp": "2026-02-22T10:46:20.912Z",
+    "timestamp": "2026-02-22T12:23:48.889Z",
     "source": "Merged Streaming History",
     "totalListeningEvents": 183770
   },
@@ -256,8 +256,8 @@
         {
           "primaryAlbumId": "7IKZJOQUvveIQZJq7Bkhl0",
           "name": "The Rise and Fall of Ziggy Stardust and the Spiders from Mars",
-          "play_count": 385,
-          "total_listening_time_ms": 73816469,
+          "play_count": 398,
+          "total_listening_time_ms": 75657157,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b27363b132d9c237849c4b837df6",
@@ -332,6 +332,32 @@
           ]
         },
         {
+          "primaryAlbumId": "2mAguyBQ2Xey2yOmwIpL3B",
+          "name": "Young Americans",
+          "play_count": 136,
+          "total_listening_time_ms": 35181141,
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2738561d631943f44b92ab27d17",
+              "height": 640,
+              "width": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e028561d631943f44b92ab27d17",
+              "height": 300,
+              "width": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048518561d631943f44b92ab27d17",
+              "height": 64,
+              "width": 64
+            }
+          ],
+          "artists": [
+            "David Bowie"
+          ]
+        },
+        {
           "primaryAlbumId": "7Jh1bpe76CNTCgdgAdBw4Z",
           "name": "\"Heroes\"",
           "play_count": 168,
@@ -349,32 +375,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d00004851204f41d52743c6a9efd62985",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "David Bowie"
-          ]
-        },
-        {
-          "primaryAlbumId": "7b2AMj2Lkqo1r1jZdJXTyj",
-          "name": "Young Americans - 2016 Remaster",
-          "play_count": 134,
-          "total_listening_time_ms": 34554485,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b273b3bd6493ad6e29dcd2ad5a37",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e02b3bd6493ad6e29dcd2ad5a37",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00004851b3bd6493ad6e29dcd2ad5a37",
               "height": 64,
               "width": 64
             }
@@ -1440,8 +1440,8 @@
         {
           "primaryAlbumId": "7fKmug2c1zcKu5vE8LhmVz",
           "name": "Natural Affair",
-          "play_count": 140,
-          "total_listening_time_ms": 26717836,
+          "play_count": 142,
+          "total_listening_time_ms": 27103085,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273ecd1bb95b9c6316398db1abc",
@@ -1803,6 +1803,32 @@
           ]
         },
         {
+          "primaryAlbumId": "3mxbdRPqMWp8dwjBXnODkz",
+          "name": "There's No Leaving Now",
+          "play_count": 79,
+          "total_listening_time_ms": 17037885,
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2739571e43c1a7a16942bf3ede2",
+              "height": 640,
+              "width": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e029571e43c1a7a16942bf3ede2",
+              "height": 300,
+              "width": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048519571e43c1a7a16942bf3ede2",
+              "height": 64,
+              "width": 64
+            }
+          ],
+          "artists": [
+            "The Tallest Man On Earth"
+          ]
+        },
+        {
           "primaryAlbumId": "4UDlzn91reG6CnWi5s9WTi",
           "name": "The Tallest Man On Earth",
           "play_count": 57,
@@ -1820,32 +1846,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d00004851db1fa7588d474f3b5afd2bb6",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "The Tallest Man On Earth"
-          ]
-        },
-        {
-          "primaryAlbumId": "512FKDQnlMSUATVWAoW6f4",
-          "name": "Sometimes The Blues Is Just A Passing Bird",
-          "play_count": 54,
-          "total_listening_time_ms": 10313918,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b2736f79d453e54da15956ef64cf",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e026f79d453e54da15956ef64cf",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d000048516f79d453e54da15956ef64cf",
               "height": 64,
               "width": 64
             }
@@ -2148,7 +2148,7 @@
         },
         {
           "primaryAlbumId": "6zxM5IvfJ1pye1wIQw9KyE",
-          "name": "Watching Movies With The Sound Off (Deluxe Edition)",
+          "name": "Watching Movies with the Sound Off",
           "play_count": 132,
           "total_listening_time_ms": 25969184,
           "images": [
@@ -2882,7 +2882,7 @@
         },
         {
           "primaryAlbumId": "2KerlpO7VnoIiE69HUiiro",
-          "name": "Promise Everything (Deluxe)",
+          "name": "Promise Everything",
           "play_count": 127,
           "total_listening_time_ms": 19033022,
           "images": [
@@ -7293,8 +7293,8 @@
         {
           "primaryAlbumId": "2wxVE9CVdjuLTC5Vmlic6i",
           "name": "(What's The Story) Morning Glory?",
-          "play_count": 200,
-          "total_listening_time_ms": 46272674,
+          "play_count": 221,
+          "total_listening_time_ms": 50975950,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273f13998f348c262a51fb865cb",
@@ -7319,8 +7319,8 @@
         {
           "primaryAlbumId": "6TlQ5fbojNRuG0hPQMbxeW",
           "name": "Definitely Maybe",
-          "play_count": 145,
-          "total_listening_time_ms": 35354134,
+          "play_count": 158,
+          "total_listening_time_ms": 38492769,
           "images": [
             {
               "height": 640,
@@ -8043,7 +8043,7 @@
         },
         {
           "primaryAlbumId": "2Qno5n2LmLePUp2NihXQ1q",
-          "name": "Against The Grain (Reissue)",
+          "name": "Against The Grain",
           "play_count": 62,
           "total_listening_time_ms": 8243281,
           "images": [
@@ -12068,7 +12068,7 @@
         },
         {
           "primaryAlbumId": "7rtvbytMpnY8mMosSEpjLL",
-          "name": "Belongs To The Dead (Remastered Version)",
+          "name": "Belongs to the Dead",
           "play_count": 99,
           "total_listening_time_ms": 10897399,
           "images": [
@@ -18612,23 +18612,23 @@
       ],
       "top_albums": [
         {
-          "primaryAlbumId": "5fsfk1Oogb99koL8wyzomw",
+          "primaryAlbumId": "4zKNNVsZ6GOzhTzXHwkMgp",
           "name": "Wide Awake!",
-          "play_count": 315,
-          "total_listening_time_ms": 54199136,
+          "play_count": 316,
+          "total_listening_time_ms": 54358042,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b2731317be574cc7f4cad6eb4f27",
+              "url": "https://i.scdn.co/image/ab67616d0000b273d7cd3e05a3ff7f2c74edd3ad",
               "height": 640,
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e021317be574cc7f4cad6eb4f27",
+              "url": "https://i.scdn.co/image/ab67616d00001e02d7cd3e05a3ff7f2c74edd3ad",
               "height": 300,
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d000048511317be574cc7f4cad6eb4f27",
+              "url": "https://i.scdn.co/image/ab67616d00004851d7cd3e05a3ff7f2c74edd3ad",
               "height": 64,
               "width": 64
             }
@@ -18692,8 +18692,8 @@
         {
           "primaryAlbumId": "4hgFRgcoKyUR5Ks0dNxJIB",
           "name": "Light Up Gold +Tally All The Things That You Broke",
-          "play_count": 30,
-          "total_listening_time_ms": 4327132,
+          "play_count": 39,
+          "total_listening_time_ms": 5628600,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b2733be23d4ec0690c4d3a6618e9",
@@ -19032,8 +19032,8 @@
         {
           "primaryAlbumId": "0peGfIV0h1VpIpxdISGIvU",
           "name": "Here and Nowhere Else",
-          "play_count": 97,
-          "total_listening_time_ms": 20827975,
+          "play_count": 100,
+          "total_listening_time_ms": 21278544,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b2732fc665813a358b1aac36713d",
@@ -20828,7 +20828,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "4W3Bkljqflf1SD5l2VEtfl",
-          "name": "Stadium Arcadium",
+          "name": "Red Hot Chili Peppers - Stadium Arcadium",
           "play_count": 107,
           "total_listening_time_ms": 21575300,
           "images": [
@@ -20854,7 +20854,7 @@
         },
         {
           "primaryAlbumId": "0eX5QY6o5cb9W72zVmWWjV",
-          "name": "Blood Sugar Sex Magik (Deluxe Edition)",
+          "name": "Blood Sugar Sex Magik",
           "play_count": 97,
           "total_listening_time_ms": 19080540,
           "images": [
@@ -20906,7 +20906,7 @@
         },
         {
           "primaryAlbumId": "34KTEhpPjq6IAgQg2yzJAL",
-          "name": "Californication (Deluxe Edition)",
+          "name": "Californication",
           "play_count": 38,
           "total_listening_time_ms": 7438783,
           "images": [
@@ -24448,7 +24448,7 @@
         },
         {
           "primaryAlbumId": "2HDwGSgOBJD9lE3BF5JEec",
-          "name": "Pastel Blues (Originals)",
+          "name": "Pastel Blues",
           "play_count": 48,
           "total_listening_time_ms": 17497441,
           "images": [
@@ -24815,7 +24815,7 @@
         },
         {
           "primaryAlbumId": "51pQ7vY7WXzxskwloaeqyj",
-          "name": "Led Zeppelin IV (Remaster)",
+          "name": "Led Zeppelin IV",
           "play_count": 67,
           "total_listening_time_ms": 13274668,
           "images": [
@@ -25175,7 +25175,7 @@
         },
         {
           "primaryAlbumId": "188JTF6dEXKksYBt9t05TJ",
-          "name": "Fauxllennium (Japanese Deluxe Edition)",
+          "name": "Fauxllennium",
           "play_count": 47,
           "total_listening_time_ms": 9767610,
           "images": [
@@ -25828,7 +25828,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "2owMD7ljpRlPYMTpsSyz4o",
-          "name": "The Sound of the Smiths (Deluxe; 2008 Remaster)",
+          "name": "The Sound of the Smiths",
           "play_count": 117,
           "total_listening_time_ms": 19076166,
           "images": [
@@ -26239,7 +26239,7 @@
         },
         {
           "primaryAlbumId": "1czmbPIdJpwT32OxaeLAyp",
-          "name": "Vol. 4 (2009 Remastered Version)",
+          "name": "Vol. 4",
           "play_count": 88,
           "total_listening_time_ms": 19315122,
           "images": [
@@ -26265,7 +26265,7 @@
         },
         {
           "primaryAlbumId": "3L8WgDYS5TtwbyxOPSAiFf",
-          "name": "Paranoid (2009 Remastered Version)",
+          "name": "Paranoid",
           "play_count": 71,
           "total_listening_time_ms": 17547099,
           "images": [
@@ -26291,7 +26291,7 @@
         },
         {
           "primaryAlbumId": "2rBPcEtQsxplAJadn8E3uR",
-          "name": "Black Sabbath (2009 Remastered Version)",
+          "name": "Black Sabbath",
           "play_count": 48,
           "total_listening_time_ms": 10047255,
           "images": [
@@ -26317,7 +26317,7 @@
         },
         {
           "primaryAlbumId": "5iJeaTV59LsLy6kzsrXOma",
-          "name": "Master of Reality (2009 Remastered Version)",
+          "name": "Master of Reality",
           "play_count": 52,
           "total_listening_time_ms": 8270356,
           "images": [
@@ -26635,8 +26635,8 @@
         {
           "primaryAlbumId": "3pZZrFZEN1pcOUiPGDqcjd",
           "name": "Best Of Friends/Last of the Summer Wine",
-          "play_count": 55,
-          "total_listening_time_ms": 9865379,
+          "play_count": 57,
+          "total_listening_time_ms": 10297248,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273f059a59d6465876460ea6ccb",
@@ -27793,7 +27793,7 @@
         },
         {
           "primaryAlbumId": "5tYqrn7cItYhDGDLHt8XuH",
-          "name": "That's The Spirit (Track by Track Commentary)",
+          "name": "That's The Spirit",
           "play_count": 19,
           "total_listening_time_ms": 2804329,
           "images": [
@@ -28443,7 +28443,7 @@
         },
         {
           "primaryAlbumId": "3aKJVWH2QOsaMtiCLxYHZX",
-          "name": "MTV Unplugged In New York (25th Anniversary)",
+          "name": "MTV Unplugged In New York",
           "play_count": 71,
           "total_listening_time_ms": 14752883,
           "images": [
@@ -28469,7 +28469,7 @@
         },
         {
           "primaryAlbumId": "2Y2UZ2SFU6HSNv5Qx0HdD3",
-          "name": "Nevermind (Remastered)",
+          "name": "Nevermind",
           "play_count": 74,
           "total_listening_time_ms": 12912505,
           "images": [
@@ -28521,9 +28521,9 @@
         },
         {
           "primaryAlbumId": "5zYP7plzCFop1pTDVi450C",
-          "name": "Bleach: Deluxe Edition",
-          "play_count": 13,
-          "total_listening_time_ms": 2004664,
+          "name": "Bleach",
+          "play_count": 14,
+          "total_listening_time_ms": 2173093,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273eb4aa51554d00887eb5a5173",
@@ -28797,7 +28797,7 @@
         },
         {
           "primaryAlbumId": "54IinP2bRs3c3TwXIEtwUb",
-          "name": "Aerial (2018 Remaster)",
+          "name": "Aerial",
           "play_count": 24,
           "total_listening_time_ms": 9542096,
           "images": [
@@ -28874,24 +28874,24 @@
           ]
         },
         {
-          "primaryAlbumId": "53Mz9H5UvWMQUXHZnaZYKQ",
+          "primaryAlbumId": "0yzCZGyBUyEZrNMjZsc2UX",
           "name": "Never for Ever",
-          "play_count": 24,
-          "total_listening_time_ms": 4412363,
+          "play_count": 25,
+          "total_listening_time_ms": 4742829,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b273786b6e14d94db2177fe8f9df",
               "height": 640,
+              "url": "https://i.scdn.co/image/ab67616d0000b273de03c19a5b918e22a0f275d8",
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e02786b6e14d94db2177fe8f9df",
               "height": 300,
+              "url": "https://i.scdn.co/image/ab67616d00001e02de03c19a5b918e22a0f275d8",
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00004851786b6e14d94db2177fe8f9df",
               "height": 64,
+              "url": "https://i.scdn.co/image/ab67616d00004851de03c19a5b918e22a0f275d8",
               "width": 64
             }
           ],
@@ -30248,23 +30248,23 @@
       ],
       "top_albums": [
         {
-          "primaryAlbumId": "0WIbzDVEpmOyBnqqdtqIL9",
-          "name": "Daydream Nation (Deluxe Edition)",
-          "play_count": 63,
-          "total_listening_time_ms": 17346466,
+          "primaryAlbumId": "2tHCRnraE3HBGewTsaxhgh",
+          "name": "Daydream Nation",
+          "play_count": 64,
+          "total_listening_time_ms": 17410497,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b27320f51363b9e2cbd207f158ba",
+              "url": "https://i.scdn.co/image/ab67616d0000b273477b2744d0df35d21c136857",
               "height": 640,
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e0220f51363b9e2cbd207f158ba",
+              "url": "https://i.scdn.co/image/ab67616d00001e02477b2744d0df35d21c136857",
               "height": 300,
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d0000485120f51363b9e2cbd207f158ba",
+              "url": "https://i.scdn.co/image/ab67616d00004851477b2744d0df35d21c136857",
               "height": 64,
               "width": 64
             }
@@ -30673,7 +30673,7 @@
         },
         {
           "primaryAlbumId": "6mcxQ1Y3uQRU0IHsvdNLH1",
-          "name": "Surfer Rosa (Remastered)",
+          "name": "Surfer Rosa",
           "play_count": 56,
           "total_listening_time_ms": 7481992,
           "images": [
@@ -31061,9 +31061,9 @@
         },
         {
           "primaryAlbumId": "400wvPGRAVr856TmT6dke5",
-          "name": "Murder Ballads (Remastered)",
-          "play_count": 46,
-          "total_listening_time_ms": 12101193,
+          "name": "Murder Ballads",
+          "play_count": 64,
+          "total_listening_time_ms": 15231674,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b2736ed819955779ff1cb71469f2",
@@ -31431,24 +31431,24 @@
           ]
         },
         {
-          "primaryAlbumId": "5ft1GmMZA4uNX7afvQfDLn",
+          "primaryAlbumId": "4NnWuGQujzWUEg0uZokO5M",
           "name": "Kiss Me Kiss Me Kiss Me",
-          "play_count": 44,
-          "total_listening_time_ms": 8066238,
+          "play_count": 53,
+          "total_listening_time_ms": 9663185,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b27362253b88109c9f632cd601d9",
               "height": 640,
+              "url": "https://i.scdn.co/image/ab67616d0000b273754d6cc8630ff4e76279fa7b",
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e0262253b88109c9f632cd601d9",
               "height": 300,
+              "url": "https://i.scdn.co/image/ab67616d00001e02754d6cc8630ff4e76279fa7b",
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d0000485162253b88109c9f632cd601d9",
               "height": 64,
+              "url": "https://i.scdn.co/image/ab67616d00004851754d6cc8630ff4e76279fa7b",
               "width": 64
             }
           ],
@@ -32104,7 +32104,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "5MtnbY0fACKCYyMAsSPmSf",
-          "name": "Unknown Pleasures (Collector's Edition)",
+          "name": "Unknown Pleasures",
           "play_count": 152,
           "total_listening_time_ms": 28819537,
           "images": [
@@ -34362,9 +34362,9 @@
         },
         {
           "primaryAlbumId": "5uEO9We3heI3m2HGQ7VaTX",
-          "name": "Let The Dominoes Fall [Expanded Version]",
-          "play_count": 20,
-          "total_listening_time_ms": 1764150,
+          "name": "Let The Dominoes Fall",
+          "play_count": 32,
+          "total_listening_time_ms": 3151553,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273bc3c9df3a318881367091eb4",
@@ -34387,23 +34387,23 @@
           ]
         },
         {
-          "primaryAlbumId": "2WHLBsRI0jWkH7MQ6C6Qm4",
-          "name": "Let The Dominoes Fall",
-          "play_count": 12,
-          "total_listening_time_ms": 1387403,
+          "primaryAlbumId": "6k6tnL97Qdr1tPuKOLDRe8",
+          "name": "Life Won't Wait",
+          "play_count": 10,
+          "total_listening_time_ms": 1367590,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b273cc635056562a5196e99c160d",
+              "url": "https://i.scdn.co/image/ab67616d0000b273976fb8e116f21ab8ea50279e",
               "height": 640,
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e02cc635056562a5196e99c160d",
+              "url": "https://i.scdn.co/image/ab67616d00001e02976fb8e116f21ab8ea50279e",
               "height": 300,
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00004851cc635056562a5196e99c160d",
+              "url": "https://i.scdn.co/image/ab67616d00004851976fb8e116f21ab8ea50279e",
               "height": 64,
               "width": 64
             }
@@ -35396,7 +35396,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "0T848sJyoYsoYPNA22Fiva",
-          "name": "Clayman (Reissue 2014)",
+          "name": "Clayman",
           "play_count": 81,
           "total_listening_time_ms": 17163095,
           "images": [
@@ -35474,7 +35474,7 @@
         },
         {
           "primaryAlbumId": "1FCrFcZRoKLIaZ6JDocHMf",
-          "name": "Reroute to Remain (Reissue 2014)",
+          "name": "Reroute to Remain",
           "play_count": 31,
           "total_listening_time_ms": 6259883,
           "images": [
@@ -36134,7 +36134,7 @@
         },
         {
           "primaryAlbumId": "7JJmb5XwzOO8jgpou264Ml",
-          "name": "Illuminate (Deluxe)",
+          "name": "Illuminate",
           "play_count": 83,
           "total_listening_time_ms": 12985884,
           "images": [
@@ -37191,7 +37191,7 @@
         },
         {
           "primaryAlbumId": "1uP8UVMXcTJn28TbhfR2Wo",
-          "name": "Masterpiece (2023 Remaster)",
+          "name": "Masterpiece",
           "play_count": 68,
           "total_listening_time_ms": 11301634,
           "images": [
@@ -37614,6 +37614,32 @@
           ]
         },
         {
+          "primaryAlbumId": "2WC4sK0ryyysQhtDok9Ytr",
+          "name": "Nothing Was The Same",
+          "play_count": 31,
+          "total_listening_time_ms": 6035180,
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b273adfb5909ec66db5fbb4d06c8",
+              "height": 640,
+              "width": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e02adfb5909ec66db5fbb4d06c8",
+              "height": 300,
+              "width": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00004851adfb5909ec66db5fbb4d06c8",
+              "height": 64,
+              "width": 64
+            }
+          ],
+          "artists": [
+            "Drake"
+          ]
+        },
+        {
           "primaryAlbumId": "1cTZMwcBJT0Ka3UJPXOeeN",
           "name": "Nice For What",
           "play_count": 32,
@@ -37631,32 +37657,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d00004851648ee7f5b11d8703447e372f",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "Drake"
-          ]
-        },
-        {
-          "primaryAlbumId": "2WC4sK0ryyysQhtDok9Ytr",
-          "name": "Nothing Was The Same - Deluxe",
-          "play_count": 20,
-          "total_listening_time_ms": 3569502,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b273adfb5909ec66db5fbb4d06c8",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e02adfb5909ec66db5fbb4d06c8",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00004851adfb5909ec66db5fbb4d06c8",
               "height": 64,
               "width": 64
             }
@@ -38292,7 +38292,7 @@
         },
         {
           "primaryAlbumId": "4ms5iozKkRN7xCwujtXRTk",
-          "name": "Camp (Deluxe Edition)",
+          "name": "Camp",
           "play_count": 48,
           "total_listening_time_ms": 8747979,
           "images": [
@@ -39346,7 +39346,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "5KRRcT67VNIZUygEbMoIC1",
-          "name": "Mellon Collie And The Infinite Sadness (Remastered)",
+          "name": "Mellon Collie And The Infinite Sadness",
           "play_count": 175,
           "total_listening_time_ms": 32393614,
           "images": [
@@ -40760,7 +40760,7 @@
         },
         {
           "primaryAlbumId": "5hoYnNgKf6Esq71Tb7uyNT",
-          "name": "Blue Valentine (Remastered)",
+          "name": "Blue Valentine",
           "play_count": 42,
           "total_listening_time_ms": 9673375,
           "images": [
@@ -41079,27 +41079,11 @@
           ]
         },
         {
-          "primaryAlbumId": "3x5IM9VEpsFLhkzy9YT2F0",
+          "primaryAlbumId": "1Jrnt7a8c18MiuQUXgfuNx",
           "name": "The Velvet Underground & Nico 45th Anniversary",
-          "play_count": 124,
-          "total_listening_time_ms": 23332213,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b2735406f6aafd2e07c1f374ba37",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e025406f6aafd2e07c1f374ba37",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d000048515406f6aafd2e07c1f374ba37",
-              "height": 64,
-              "width": 64
-            }
-          ],
+          "play_count": 125,
+          "total_listening_time_ms": 23356152,
+          "images": [],
           "artists": [
             "The Velvet Underground"
           ]
@@ -41421,7 +41405,7 @@
         },
         {
           "primaryAlbumId": "6aBUnkXuCEQQHAlTokv9or",
-          "name": "Speaking in Tongues (Deluxe Version)",
+          "name": "Speaking in Tongues",
           "play_count": 72,
           "total_listening_time_ms": 18182745,
           "images": [
@@ -41498,24 +41482,24 @@
           ]
         },
         {
-          "primaryAlbumId": "7veDNtXlh2n0noGdD0oqBB",
+          "primaryAlbumId": "7CqleiaEqHVazV19P532X9",
           "name": "Fear of Music",
-          "play_count": 19,
-          "total_listening_time_ms": 3663488,
+          "play_count": 22,
+          "total_listening_time_ms": 4148462,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b273874328096de13649dd64c790",
               "height": 640,
+              "url": "https://i.scdn.co/image/ab67616d0000b2738365f74aa622b1b86962c8dd",
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e02874328096de13649dd64c790",
               "height": 300,
+              "url": "https://i.scdn.co/image/ab67616d00001e028365f74aa622b1b86962c8dd",
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00004851874328096de13649dd64c790",
               "height": 64,
+              "url": "https://i.scdn.co/image/ab67616d000048518365f74aa622b1b86962c8dd",
               "width": 64
             }
           ],
@@ -44319,9 +44303,9 @@
         },
         {
           "primaryAlbumId": "1KaIRTf1YEWt54V3IW34qV",
-          "name": "The Wall (Remastered)",
-          "play_count": 46,
-          "total_listening_time_ms": 8593757,
+          "name": "The Wall",
+          "play_count": 47,
+          "total_listening_time_ms": 8696850,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b273f34e8811de255b34c56301d8",
@@ -45341,7 +45325,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "1LDAh7QQnWvp3GJ9QDa1Pj",
-          "name": "Kill 'Em All (Remastered)",
+          "name": "Kill 'Em All",
           "play_count": 187,
           "total_listening_time_ms": 48692549,
           "images": [
@@ -45367,7 +45351,7 @@
         },
         {
           "primaryAlbumId": "6NwbeybX6TDtXlpXvnUOZC",
-          "name": "Master Of Puppets (Remastered)",
+          "name": "Master of Puppets",
           "play_count": 36,
           "total_listening_time_ms": 10750630,
           "images": [
@@ -46106,7 +46090,7 @@
         },
         {
           "primaryAlbumId": "3JfZDI5g3LGO2GFr2iUEAH",
-          "name": "Marigold (Expanded Edition)",
+          "name": "Marigold",
           "play_count": 39,
           "total_listening_time_ms": 6966714,
           "images": [
@@ -46428,7 +46412,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "75RzhKxxJN7jzmigmu9U5a",
-          "name": "Blodig Alvor Na Na Na Na Na (Remastered 2015)",
+          "name": "Blodig Alvor Na Na Na Na Na",
           "play_count": 66,
           "total_listening_time_ms": 13066829,
           "images": [
@@ -46506,7 +46490,7 @@
         },
         {
           "primaryAlbumId": "1VhynKsU8lS6w9jwwDfTDy",
-          "name": "Splitter Pine (Remastered 2015)",
+          "name": "Splitter Pine",
           "play_count": 29,
           "total_listening_time_ms": 4855112,
           "images": [
@@ -48995,8 +48979,8 @@
         {
           "primaryAlbumId": "64C00gcYOfCw2RWC28iW7B",
           "name": "Life's a Riot With Spy vs. Spy",
-          "play_count": 69,
-          "total_listening_time_ms": 9007721,
+          "play_count": 73,
+          "total_listening_time_ms": 9341231,
           "images": [
             {
               "url": "https://i.scdn.co/image/ab67616d0000b2736f32638432f766ffe8da86f1",
@@ -56542,7 +56526,7 @@
         },
         {
           "primaryAlbumId": "4M1PoO35seEmt9RdxX7M1i",
-          "name": "Ultraviolence (Deluxe)",
+          "name": "Ultraviolence",
           "play_count": 25,
           "total_listening_time_ms": 5260417,
           "images": [
@@ -64469,6 +64453,32 @@
           ]
         },
         {
+          "primaryAlbumId": "6aPHQ5GOr1MbsEAQhAqXUY",
+          "name": "Blomst IL",
+          "play_count": 23,
+          "total_listening_time_ms": 3028592,
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2732110b5801a29ea231ef212e4",
+              "height": 640,
+              "width": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e022110b5801a29ea231ef212e4",
+              "height": 300,
+              "width": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048512110b5801a29ea231ef212e4",
+              "height": 64,
+              "width": 64
+            }
+          ],
+          "artists": [
+            "Blomst"
+          ]
+        },
+        {
           "primaryAlbumId": "1Fk0bho0NSuE8V1jevm6qf",
           "name": "Cowboy & Indianere",
           "play_count": 17,
@@ -64486,32 +64496,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d00004851bf1fb9655417d0ca3eb1624e",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "Blomst"
-          ]
-        },
-        {
-          "primaryAlbumId": "6i1jyAYxqDP3byP9gVEMw6",
-          "name": "Blomst IL + ekstraomgang",
-          "play_count": 18,
-          "total_listening_time_ms": 2494874,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b2730d1bd8bf46f54d36d52cd62c",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e020d1bd8bf46f54d36d52cd62c",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d000048510d1bd8bf46f54d36d52cd62c",
               "height": 64,
               "width": 64
             }
@@ -67566,7 +67550,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "1hRv3AxmkmVrSQf0Ak9v7p",
-          "name": "Man On The Moon: The End Of Day (Int'l Version)",
+          "name": "Man On The Moon: The End Of Day",
           "play_count": 104,
           "total_listening_time_ms": 18763391,
           "images": [
@@ -67942,7 +67926,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "2CQRYn5cTD2B9a1ONjhTN2",
-          "name": "Pet Sounds (Original Mono & Stereo Mix)",
+          "name": "Pet Sounds",
           "play_count": 119,
           "total_listening_time_ms": 17714285,
           "images": [
@@ -68682,7 +68666,7 @@
         },
         {
           "primaryAlbumId": "0qAPxT4KrKWhPeUNhJqtZS",
-          "name": "Underneath the Rainbow (Bonus Track Version)",
+          "name": "Underneath the Rainbow",
           "play_count": 28,
           "total_listening_time_ms": 3615937,
           "images": [
@@ -69725,7 +69709,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "63Gzrq2kU1Br77l5IOEUbV",
-          "name": "Daybreaker (Deluxe Edition)",
+          "name": "Daybreaker",
           "play_count": 130,
           "total_listening_time_ms": 26690547,
           "images": [
@@ -71858,7 +71842,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "5dhnFKVNR2x9BYqQ6FPpQh",
-          "name": "A Thousand Suns (Bonus Edition)",
+          "name": "A Thousand Suns",
           "play_count": 44,
           "total_listening_time_ms": 8932290,
           "images": [
@@ -85361,23 +85345,23 @@
       ],
       "top_albums": [
         {
-          "primaryAlbumId": "299lFlaAsNQdgbIZNPmIA0",
-          "name": "A Charlie Brown Christmas [2012 Remastered & Expanded Edition]",
-          "play_count": 125,
-          "total_listening_time_ms": 21994085,
+          "primaryAlbumId": "1AuqctepNkbMGhlysf9VqX",
+          "name": "A Charlie Brown Christmas",
+          "play_count": 135,
+          "total_listening_time_ms": 23561878,
           "images": [
             {
-              "url": "https://i.scdn.co/image/ab67616d0000b27332b0f9b1e5ee30df7a91cec3",
+              "url": "https://i.scdn.co/image/ab67616d0000b273705d534fa38e41a32668fdd9",
               "height": 640,
               "width": 640
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d00001e0232b0f9b1e5ee30df7a91cec3",
+              "url": "https://i.scdn.co/image/ab67616d00001e02705d534fa38e41a32668fdd9",
               "height": 300,
               "width": 300
             },
             {
-              "url": "https://i.scdn.co/image/ab67616d0000485132b0f9b1e5ee30df7a91cec3",
+              "url": "https://i.scdn.co/image/ab67616d00004851705d534fa38e41a32668fdd9",
               "height": 64,
               "width": 64
             }
@@ -85430,32 +85414,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d000048512e92b9bfd65fce985907d2e5",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "Vince Guaraldi Trio"
-          ]
-        },
-        {
-          "primaryAlbumId": "1AuqctepNkbMGhlysf9VqX",
-          "name": "A Charlie Brown Christmas",
-          "play_count": 10,
-          "total_listening_time_ms": 1567793,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b273705d534fa38e41a32668fdd9",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e02705d534fa38e41a32668fdd9",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00004851705d534fa38e41a32668fdd9",
               "height": 64,
               "width": 64
             }
@@ -86422,7 +86380,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "29ML65w35iyQry14KXbBiF",
-          "name": "Songs In The Key Of Life (Reissue)",
+          "name": "Songs In The Key Of Life",
           "play_count": 59,
           "total_listening_time_ms": 14999994,
           "images": [
@@ -104009,7 +103967,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "5kD9T7GForh8LnRz5ClbL8",
-          "name": "Bleed American (Deluxe Edition)",
+          "name": "Bleed American",
           "play_count": 67,
           "total_listening_time_ms": 10697533,
           "images": [
@@ -126187,7 +126145,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "60yAKwBX4c3hm4uubwzvD2",
-          "name": "Home Again (Deluxe Version)",
+          "name": "Home Again",
           "play_count": 73,
           "total_listening_time_ms": 14372512,
           "images": [
@@ -139914,7 +139872,7 @@
         },
         {
           "primaryAlbumId": "0LMKLFAoXfRyv5y3qTsK5x",
-          "name": "Significant Other (Explicit)",
+          "name": "Significant Other",
           "play_count": 19,
           "total_listening_time_ms": 3433496,
           "images": [
@@ -146501,6 +146459,32 @@
       ],
       "top_albums": [
         {
+          "primaryAlbumId": "2Dc5eGTFOvu34x6ONYAdGt",
+          "name": "The Shape Of Punk To Come",
+          "play_count": 38,
+          "total_listening_time_ms": 5932208,
+          "images": [
+            {
+              "height": 640,
+              "url": "https://i.scdn.co/image/ab67616d0000b2735cc694ed1ca80fd696a0817e",
+              "width": 640
+            },
+            {
+              "height": 300,
+              "url": "https://i.scdn.co/image/ab67616d00001e025cc694ed1ca80fd696a0817e",
+              "width": 300
+            },
+            {
+              "height": 64,
+              "url": "https://i.scdn.co/image/ab67616d000048515cc694ed1ca80fd696a0817e",
+              "width": 64
+            }
+          ],
+          "artists": [
+            "Refused"
+          ]
+        },
+        {
           "primaryAlbumId": "34uKquOrQLgzBsUbFTkMTc",
           "name": "The E.P. Compilation",
           "play_count": 18,
@@ -146518,32 +146502,6 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d00004851b7996952a374932712b31b58",
-              "height": 64,
-              "width": 64
-            }
-          ],
-          "artists": [
-            "Refused"
-          ]
-        },
-        {
-          "primaryAlbumId": "78dLMksdx6uTGaJAHdqY0R",
-          "name": "The Shape Of Punk To Come",
-          "play_count": 20,
-          "total_listening_time_ms": 3527044,
-          "images": [
-            {
-              "url": "https://i.scdn.co/image/ab67616d0000b273de8574727a730e8337ff1197",
-              "height": 640,
-              "width": 640
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00001e02de8574727a730e8337ff1197",
-              "height": 300,
-              "width": 300
-            },
-            {
-              "url": "https://i.scdn.co/image/ab67616d00004851de8574727a730e8337ff1197",
               "height": 64,
               "width": 64
             }
@@ -146579,32 +146537,6 @@
           ]
         },
         {
-          "primaryAlbumId": "2Dc5eGTFOvu34x6ONYAdGt",
-          "name": "The Shape Of Punk To Come [Deluxe Version]",
-          "play_count": 18,
-          "total_listening_time_ms": 2405164,
-          "images": [
-            {
-              "height": 640,
-              "url": "https://i.scdn.co/image/ab67616d0000b2735cc694ed1ca80fd696a0817e",
-              "width": 640
-            },
-            {
-              "height": 300,
-              "url": "https://i.scdn.co/image/ab67616d00001e025cc694ed1ca80fd696a0817e",
-              "width": 300
-            },
-            {
-              "height": 64,
-              "url": "https://i.scdn.co/image/ab67616d000048515cc694ed1ca80fd696a0817e",
-              "width": 64
-            }
-          ],
-          "artists": [
-            "Refused"
-          ]
-        },
-        {
           "primaryAlbumId": "0C9JzWHcKsyY8AzgCM97h0",
           "name": "Freedom",
           "play_count": 13,
@@ -146622,6 +146554,32 @@
             },
             {
               "url": "https://i.scdn.co/image/ab67616d0000485188b6b5c1d6aa9410fcf56e5c",
+              "height": 64,
+              "width": 64
+            }
+          ],
+          "artists": [
+            "Refused"
+          ]
+        },
+        {
+          "primaryAlbumId": "2MhRHAo1KxJaCMR3MSDH9K",
+          "name": "Elektra",
+          "play_count": 5,
+          "total_listening_time_ms": 555979,
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2732b9bc4b94adf78e2c7383fd5",
+              "height": 640,
+              "width": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e022b9bc4b94adf78e2c7383fd5",
+              "height": 300,
+              "width": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048512b9bc4b94adf78e2c7383fd5",
               "height": 64,
               "width": 64
             }
@@ -147188,7 +147146,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "3cfgisz6DhZmooQk08P4Eu",
-          "name": "In Waves (Deluxe)",
+          "name": "In Waves",
           "play_count": 39,
           "total_listening_time_ms": 8277882,
           "images": [
@@ -158937,7 +158895,7 @@
       "top_albums": [
         {
           "primaryAlbumId": "5eI55IZN3ZtGp0p8J1THe0",
-          "name": "Fresh Fruit for Rotting Vegetables",
+          "name": "Dead Kennedys - Fresh Fruit for Rotting Vegetables",
           "play_count": 30,
           "total_listening_time_ms": 3836833,
           "images": [
@@ -162029,7 +161987,7 @@
         },
         {
           "primaryAlbumId": "2Zb1vzq95XsUDGdjOkaGie",
-          "name": "Psychocandy (Expanded Version)",
+          "name": "Psychocandy",
           "play_count": 5,
           "total_listening_time_ms": 761195,
           "images": [
