@@ -209,9 +209,10 @@ jobs:
         with:
           name: sync-data
 
-      # If artifact was extracted to workspace root, move into data/ (otherwise it's already under data/)
+      # Ensure artifact contents end up in data/ (handles both root extraction and data/ extraction)
       - name: Place artifact into data directory
         run: |
+          # If artifact extracted to workspace root (merged-streaming-history/, cleaned-data/)
           if [ -d merged-streaming-history ]; then
             cp -r merged-streaming-history/* data/merged-streaming-history/ 2>/dev/null || true
             rm -rf merged-streaming-history
@@ -219,6 +220,14 @@ jobs:
           if [ -d cleaned-data ]; then
             cp -r cleaned-data/* data/cleaned-data/ 2>/dev/null || true
             rm -rf cleaned-data
+          fi
+          # If artifact extracted under artifact name (sync-data/...)
+          if [ -d sync-data ]; then
+            cp -r sync-data/merged-streaming-history/* data/merged-streaming-history/ 2>/dev/null || true
+            cp -r sync-data/cleaned-data/* data/cleaned-data/ 2>/dev/null || true
+            cp -r sync-data/data/merged-streaming-history/* data/merged-streaming-history/ 2>/dev/null || true
+            cp -r sync-data/data/cleaned-data/* data/cleaned-data/ 2>/dev/null || true
+            rm -rf sync-data
           fi
           echo "Contents of data/merged-streaming-history:"
           ls -la data/merged-streaming-history/ 2>/dev/null || true
@@ -232,9 +241,11 @@ jobs:
           MERGED_COUNT=$(ls -1 data/merged-streaming-history/merged-streaming-history-*.json 2>/dev/null | wc -l)
           if [ "$MERGED_COUNT" -eq 0 ]; then
             echo "::error::No merged-streaming-history file found; skipping commit"
+            ls -la data/merged-streaming-history/ 2>/dev/null || true
             exit 1
           fi
-          git add -f data/merged-streaming-history/ data/cleaned-data/
+          # Stage all changes: new merged file (+ -f for ignored), remove old merged file
+          git add -A -f data/merged-streaming-history/ data/cleaned-data/
           if git diff --staged --quiet; then
             echo "::error::No changes to commit (artifact may have been in wrong location or identical to repo)"
             git status
