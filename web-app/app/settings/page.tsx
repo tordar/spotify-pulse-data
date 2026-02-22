@@ -643,6 +643,7 @@ export default function SettingsPage() {
                     <li><a href="https://github.com/tordar/spotify-pulse/fork" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Fork the repository <ExternalLink className="w-3 h-3" /></a>.</li>
                     <li>In <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Vercel <ExternalLink className="w-3 h-3" /></a>, <strong>Add New Project</strong> and import your forked GitHub repo.</li>
                     <li>Deploy. The app will be live but without data until you complete the remaining steps.</li>
+                    <li>In Vercel (Project → Settings → Environment Variables), add <strong>SPOTIFY_OAUTH_STATE_SECRET</strong> with any random string. This is required for authorizing with Spotify in the next step.</li>
                   </ol>
                 </section>
 
@@ -656,9 +657,9 @@ export default function SettingsPage() {
                   </p>
                   <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-1">
                     <li>Create an app at <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Spotify Developer Dashboard <ExternalLink className="w-3 h-3" /></a>.</li>
-                    <li>Note <strong>Client ID</strong> and <strong>Client Secret</strong>. In your app, add this redirect URI: <code className="text-foreground/80">https://your-app.vercel.app/callback</code> (use your actual Vercel URL). For local dev use the same host as in your browser, e.g. <code className="text-foreground/80">http://127.0.0.1:3000/callback</code> or <code className="text-foreground/80">http://localhost:3000/callback</code>.</li>
+                    <li>Note <strong>Client ID</strong> and <strong>Client Secret</strong>. In your app, add this redirect URI: <code className="text-foreground/80">https://your-app.vercel.app/callback</code> (use your actual Vercel URL or custom domain). For local dev use the same host as in your browser, e.g. <code className="text-foreground/80">http://127.0.0.1:3000/callback</code> or <code className="text-foreground/80">http://localhost:3000/callback</code>.</li>
                     <li>Get a refresh token below: enter Client ID and Client Secret, click <strong>Authorize with Spotify</strong>. You will be sent to Spotify to authorize, then back here to copy the refresh token.</li>
-                    <li>Add the values to GitHub and Vercel in the next step.</li>
+                    <li>Add the three values (Client ID, Client Secret, refresh token) to GitHub and Vercel in the next step.</li>
                   </ol>
                   <form
                     className="flex flex-col gap-3 max-w-sm mt-3 p-4 rounded-lg border border-border bg-muted/30"
