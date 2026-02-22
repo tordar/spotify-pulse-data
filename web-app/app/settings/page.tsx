@@ -3,7 +3,18 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SpotifyStatsLayout from '@/components/SpotifyStatsLayout'
-import { Clock, CheckCircle2, XCircle, Loader2, ExternalLink, Music2, Trash2, FileJson, Key, Github, Zap, Cloud, ChevronDown, ChevronUp, Upload } from 'lucide-react'
+import { Clock, CheckCircle2, XCircle, Loader2, ExternalLink, Music2, Trash2, FileJson, Key, Github, Zap, Cloud, ChevronDown, ChevronUp, Upload, Album, Save, Plus, Minus } from 'lucide-react'
+
+interface ConsolidationRule {
+  artistName: string
+  baseAlbumName: string
+  variations: string[]
+}
+
+interface AlbumVariation {
+  albumName: string
+  count: number
+}
 
 interface RecentPlayItem {
   track: {
@@ -71,6 +82,18 @@ export default function SettingsPage() {
     notConfigured?: boolean
   } | null>(null)
   const [dragOver, setDragOver] = useState(false)
+
+  const [rules, setRules] = useState<ConsolidationRule[]>([])
+  const [variationsByArtist, setVariationsByArtist] = useState<Record<string, AlbumVariation[]>>({})
+  const [rulesLoading, setRulesLoading] = useState(true)
+  const [variationsLoading, setVariationsLoading] = useState(true)
+  const [rulesSaveLoading, setRulesSaveLoading] = useState(false)
+  const [rulesSaveResult, setRulesSaveResult] = useState<{ success?: boolean; error?: string } | null>(null)
+  const [expandedArtists, setExpandedArtists] = useState<Set<string>>(new Set())
+  const [rulesSearch, setRulesSearch] = useState('')
+  const [addRuleArtist, setAddRuleArtist] = useState<string | null>(null)
+  const [addRuleBase, setAddRuleBase] = useState('')
+  const [addRuleVariations, setAddRuleVariations] = useState<Set<string>>(new Set())
 
   const isValidUploadFilename = (name: string) =>
     name.startsWith('Streaming_History_Audio_') && name.endsWith('.json')
@@ -249,6 +272,42 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
+    const fetchRules = async () => {
+      setRulesLoading(true)
+      try {
+        const res = await fetch('/api/album-consolidation-rules', { cache: 'no-store' })
+        const data = await res.json()
+        setRules(Array.isArray(data.rules) ? data.rules : [])
+      } catch {
+        setRules([])
+      } finally {
+        setRulesLoading(false)
+      }
+    }
+    fetchRules()
+  }, [])
+
+  useEffect(() => {
+    const fetchVariations = async () => {
+      setVariationsLoading(true)
+      try {
+        const res = await fetch('/api/data/album-variations-by-artist', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          setVariationsByArtist(typeof data === 'object' && data !== null ? data : {})
+        } else {
+          setVariationsByArtist({})
+        }
+      } catch {
+        setVariationsByArtist({})
+      } finally {
+        setVariationsLoading(false)
+      }
+    }
+    fetchVariations()
+  }, [])
+
+  useEffect(() => {
     const fetchRecentTracks = async () => {
       setRecentTracksLoading(true)
       setRecentTracksError(null)
@@ -328,6 +387,71 @@ export default function SettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const artistNames = Array.from(
+    new Set([
+      ...Object.keys(variationsByArtist),
+      ...rules.map((r) => r.artistName),
+    ])
+  ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  const filteredArtistNames = rulesSearch.trim()
+    ? artistNames.filter((a) =>
+        a.toLowerCase().includes(rulesSearch.trim().toLowerCase())
+      )
+    : artistNames
+
+  const addRule = (artistName: string, baseAlbumName: string, variationAlbumNames: string[]) => {
+    const variations = variationAlbumNames.filter((v) => v !== baseAlbumName)
+    if (variations.length === 0) return
+    setRules((prev) => [
+      ...prev,
+      { artistName, baseAlbumName, variations },
+    ])
+    setRulesSaveResult(null)
+  }
+
+  const removeRule = (index: number) => {
+    setRules((prev) => prev.filter((_, i) => i !== index))
+    setRulesSaveResult(null)
+  }
+
+  const saveRules = async () => {
+    if (!uploadSecret.trim()) {
+      setRulesSaveResult({ error: 'Enter your upload secret above.' })
+      return
+    }
+    setRulesSaveLoading(true)
+    setRulesSaveResult(null)
+    try {
+      const res = await fetch('/api/album-consolidation-rules', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Upload-Secret': uploadSecret.trim(),
+        },
+        body: JSON.stringify({ rules }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRulesSaveResult({ error: data.error || 'Failed to save rules' })
+        return
+      }
+      setRulesSaveResult({ success: true })
+    } catch {
+      setRulesSaveResult({ error: 'Failed to save rules' })
+    } finally {
+      setRulesSaveLoading(false)
+    }
+  }
+
+  const toggleArtistExpanded = (artist: string) => {
+    setExpandedArtists((prev) => {
+      const next = new Set(prev)
+      if (next.has(artist)) next.delete(artist)
+      else next.add(artist)
+      return next
+    })
   }
 
   return (
@@ -453,7 +577,7 @@ export default function SettingsPage() {
                     5. Upload your data in the app
                   </h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Use <strong>Upload streaming history</strong> below to select or drag your <code className="text-foreground/80">Streaming_History_Audio_*.json</code> files. They are uploaded to your repo and the <strong>Merge Streaming History</strong> workflow runs automatically. Alternatively, add the files to <code className="text-foreground/80">data/spotify-history/</code> in your repo and push manually.
+                    Use <strong>Upload streaming history</strong> below to select or drag your <code className="text-foreground/80">Streaming_History_Audio_*.json</code> files. They are uploaded to your repo and the <strong>Merge Streaming History</strong> workflow runs automatically. Alternatively, add the files to <code className="text-foreground/80">data/spotify-history/</code> in your repo and push manually. You can edit album consolidation rules below and save them to your repo.
                   </p>
                 </section>
               </div>
@@ -565,6 +689,225 @@ export default function SettingsPage() {
                   </p>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Album className="w-4 h-4" />
+              Album consolidation rules
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              See album name variations per artist from your data and define rules so different versions (e.g. remasters) consolidate into one. Save writes <code className="text-foreground/80">album-consolidation-rules.json</code> to your repo. Use the upload secret above to save.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {rulesLoading && variationsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading rules and variations...</span>
+              </div>
+            ) : (
+              <>
+                {!variationsLoading && Object.keys(variationsByArtist).length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Run merge and generate cleaned files to see album variations from your data. You can still edit and save rules below.
+                  </p>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="rules-search" className="text-sm font-medium">
+                    Filter by artist
+                  </label>
+                  <input
+                    id="rules-search"
+                    type="text"
+                    value={rulesSearch}
+                    onChange={(e) => setRulesSearch(e.target.value)}
+                    placeholder="Search artists..."
+                    className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+                <ul className="space-y-2 max-h-[500px] overflow-y-auto">
+                  {filteredArtistNames.map((artistName) => {
+                    const expanded = expandedArtists.has(artistName)
+                    const variations = variationsByArtist[artistName] || []
+                    const artistRules = rules.filter((r) => r.artistName === artistName)
+                    const albumNames = Array.from(
+                      new Set([
+                        ...variations.map((v) => v.albumName),
+                        ...artistRules.flatMap((r) => [r.baseAlbumName, ...r.variations]),
+                      ])
+                    ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+                    const totalPlays = variations.reduce((sum, v) => sum + v.count, 0)
+                    const isAdding = addRuleArtist === artistName
+                    return (
+                      <li key={artistName} className="border border-border rounded-md overflow-hidden">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-muted/50"
+                          onClick={() => toggleArtistExpanded(artistName)}
+                        >
+                          <span>{artistName}</span>
+                          {expanded ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+                        </button>
+                        {expanded && (
+                          <div className="px-3 pb-3 pt-0 space-y-3 border-t border-border">
+                            {variations.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Album variations from your data</p>
+                                <ul className="text-sm space-y-1">
+                                  {variations.map((v) => {
+                                    const pct = totalPlays > 0 ? Math.round((v.count / totalPlays) * 100) : 0
+                                    return (
+                                      <li key={v.albumName} className="flex justify-between gap-2">
+                                        <span className="truncate">{v.albumName}</span>
+                                        <span className="text-muted-foreground shrink-0">{v.count.toLocaleString()} plays ({pct}%)</span>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              </div>
+                            )}
+                            {artistRules.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Current rules</p>
+                                <ul className="space-y-2">
+                                  {artistRules.map((rule, idx) => {
+                                    const ruleIndex = rules.findIndex((r) => r === rule)
+                                    return (
+                                      <li key={`${rule.baseAlbumName}-${idx}`} className="flex items-start justify-between gap-2 text-sm bg-muted/30 rounded px-2 py-1.5">
+                                        <span><strong>{rule.baseAlbumName}</strong> ← {rule.variations.join(', ')}</span>
+                                        <button
+                                          type="button"
+                                          className="text-muted-foreground hover:text-foreground shrink-0"
+                                          onClick={() => removeRule(ruleIndex)}
+                                          aria-label={`Remove rule for ${rule.baseAlbumName}`}
+                                        >
+                                          <Minus className="w-4 h-4" />
+                                        </button>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              </div>
+                            )}
+                            {albumNames.length > 0 && (
+                              <div>
+                                {!isAdding ? (
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                    onClick={() => {
+                                      setAddRuleArtist(artistName)
+                                      setAddRuleBase(albumNames[0] || '')
+                                      setAddRuleVariations(new Set())
+                                    }}
+                                  >
+                                    <Plus className="w-4 h-4" /> Add rule
+                                  </button>
+                                ) : (
+                                  <div className="space-y-2 rounded border border-border p-2 bg-muted/20">
+                                    <p className="text-xs font-medium text-muted-foreground">New rule: base album + variations to consolidate into it</p>
+                                    <div>
+                                      <label className="text-xs text-muted-foreground">Base album name</label>
+                                      <select
+                                        className="mt-0.5 w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
+                                        value={addRuleBase}
+                                        onChange={(e) => setAddRuleBase(e.target.value)}
+                                      >
+                                        {albumNames.map((name) => (
+                                          <option key={name} value={name}>{name}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-muted-foreground">Variations (map into base)</label>
+                                      <div className="mt-1 flex flex-wrap gap-2">
+                                        {albumNames.filter((n) => n !== addRuleBase).map((name) => (
+                                          <label key={name} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={addRuleVariations.has(name)}
+                                              onChange={(e) => {
+                                                setAddRuleVariations((prev) => {
+                                                  const next = new Set(prev)
+                                                  if (e.target.checked) next.add(name)
+                                                  else next.delete(name)
+                                                  return next
+                                                })
+                                              }}
+                                            />
+                                            <span>{name}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground hover:bg-primary/90"
+                                        onClick={() => {
+                                          addRule(artistName, addRuleBase, Array.from(addRuleVariations))
+                                          setAddRuleArtist(null)
+                                          setAddRuleBase('')
+                                          setAddRuleVariations(new Set())
+                                        }}
+                                      >
+                                        Add rule
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="rounded border border-input px-2 py-1 text-sm hover:bg-muted/50"
+                                        onClick={() => {
+                                          setAddRuleArtist(null)
+                                          setAddRuleBase('')
+                                          setAddRuleVariations(new Set())
+                                        }}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+                {filteredArtistNames.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No artists match. Add data and run generate cleaned files, or clear the filter.</p>
+                )}
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={saveRules}
+                    disabled={rulesSaveLoading || !uploadSecret.trim()}
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {rulesSaveLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save rules to GitHub
+                      </>
+                    )}
+                  </button>
+                  {rulesSaveResult && (
+                    <span className={rulesSaveResult.success ? 'text-sm text-green-600 dark:text-green-500' : 'text-sm text-red-500'}>
+                      {rulesSaveResult.success ? 'Saved.' : rulesSaveResult.error}
+                    </span>
+                  )}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
