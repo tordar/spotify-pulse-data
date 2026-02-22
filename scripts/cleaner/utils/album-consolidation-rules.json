@@ -103,15 +103,6 @@
       ]
     },
     {
-      "artistName": "Eddie Vedder",
-      "baseAlbumName": "Into The Wild (Music For The Motion Picture)",
-      "variations": [
-        "into the wild",
-        "into the wild (music for the motion picture)",
-        "music for the motion picture into the wild"
-      ]
-    },
-    {
       "artistName": "Tycho",
       "baseAlbumName": "Awake",
       "variations": [
@@ -123,7 +114,8 @@
       "artistName": "The Beatles",
       "baseAlbumName": "Revolver",
       "variations": [
-        "revolver (remastered)"
+        "revolver (remastered)",
+        "revolver (super deluxe)"
       ]
     },
     {
@@ -171,8 +163,8 @@
       "artistName": "Frank Ocean",
       "baseAlbumName": "Biking (Solo)",
       "variations": [
-        "biking (solo)",
-        "biking"
+        "biking",
+        "biking (solo)"
       ]
     },
     {
@@ -204,16 +196,16 @@
       "artistName": "David Bowie",
       "baseAlbumName": "Hunky Dory",
       "variations": [
-        "hunky dory (2015 remaster)",
-        "hunky dory"
+        "hunky dory",
+        "hunky dory (2015 remaster)"
       ]
     },
     {
       "artistName": "David Bowie",
       "baseAlbumName": "Low",
       "variations": [
-        "low (2017 remaster)",
-        "low (1999 remaster)"
+        "low (1999 remaster)",
+        "low (2017 remaster)"
       ]
     },
     {
@@ -252,16 +244,16 @@
       "artistName": "David Bowie",
       "baseAlbumName": "A Reality Tour (Live)",
       "variations": [
-        "a reality tour (live)",
-        "a reality tour"
+        "a reality tour",
+        "a reality tour (live)"
       ]
     },
     {
       "artistName": "David Bowie",
       "baseAlbumName": "The Man Who Sold the World",
       "variations": [
-        "the man who sold the world (2015 remaster)",
-        "the man who sold the world"
+        "the man who sold the world",
+        "the man who sold the world (2015 remaster)"
       ]
     },
     {
@@ -276,8 +268,8 @@
       "artistName": "Mac Miller",
       "baseAlbumName": "Watching Movies With The Sound Off (Deluxe Edition)",
       "variations": [
-        "watching movies with the sound off (deluxe edition)",
-        "watching movies with the sound off"
+        "watching movies with the sound off",
+        "watching movies with the sound off (deluxe edition)"
       ]
     },
     {
@@ -317,8 +309,8 @@
       "artistName": "Nina Simone",
       "baseAlbumName": "Pastel Blues (Originals)",
       "variations": [
-        "pastel blues (originals)",
-        "pastel blues"
+        "pastel blues",
+        "pastel blues (originals)"
       ]
     },
     {
@@ -341,8 +333,8 @@
       "artistName": "Basement",
       "baseAlbumName": "Promise Everything (Deluxe)",
       "variations": [
-        "promise everything (deluxe)",
-        "promise everything"
+        "promise everything",
+        "promise everything (deluxe)"
       ]
     },
     {
@@ -373,8 +365,8 @@
       "artistName": "Kate Bush",
       "baseAlbumName": "Aerial (2018 Remaster)",
       "variations": [
-        "aerial (2018 remaster)",
-        "aerial"
+        "aerial",
+        "aerial (2018 remaster)"
       ]
     },
     {
@@ -389,24 +381,24 @@
       "artistName": "Metallica",
       "baseAlbumName": "Kill 'Em All (Remastered)",
       "variations": [
-        "kill 'em all (remastered)",
-        "kill 'em all"
+        "kill 'em all",
+        "kill 'em all (remastered)"
       ]
     },
     {
       "artistName": "Metallica",
       "baseAlbumName": "Master Of Puppets (Remastered)",
       "variations": [
-        "master of puppets (remastered)",
-        "master of puppets"
+        "master of puppets",
+        "master of puppets (remastered)"
       ]
     },
     {
       "artistName": "TV Girl",
       "baseAlbumName": "Fauxllennium (Japanese Deluxe Edition)",
       "variations": [
-        "fauxllennium (japanese deluxe edition)",
-        "fauxllennium"
+        "fauxllennium",
+        "fauxllennium (japanese deluxe edition)"
       ]
     },
     {
@@ -437,16 +429,16 @@
       "artistName": "Tigers Jaw",
       "baseAlbumName": "Belongs To The Dead (Remastered Version)",
       "variations": [
-        "belongs to the dead (remastered version)",
-        "belongs to the dead"
+        "belongs to the dead",
+        "belongs to the dead (remastered version)"
       ]
     },
     {
       "artistName": "Pinegrove",
       "baseAlbumName": "Marigold (Expanded Edition)",
       "variations": [
-        "marigold (expanded edition)",
-        "marigold"
+        "marigold",
+        "marigold (expanded edition)"
       ]
     },
     {
@@ -461,8 +453,8 @@
       "artistName": "Big Thief",
       "baseAlbumName": "Masterpiece (2023 Remaster)",
       "variations": [
-        "masterpiece (2023 remaster)",
-        "masterpiece"
+        "masterpiece",
+        "masterpiece (2023 remaster)"
       ]
     },
     {
@@ -502,24 +494,24 @@
       "artistName": "Bad Religion",
       "baseAlbumName": "Against The Grain (Reissue)",
       "variations": [
-        "against the grain (reissue)",
-        "against the grain"
+        "against the grain",
+        "against the grain (reissue)"
       ]
     },
     {
       "artistName": "Bad Religion",
       "baseAlbumName": "New Maps of Hell Deluxe Version",
       "variations": [
-        "new maps of hell deluxe version",
-        "new maps of hell (deluxe edition)"
+        "new maps of hell (deluxe edition)",
+        "new maps of hell deluxe version"
       ]
     },
     {
       "artistName": "Bad Religion",
       "baseAlbumName": "Tested (Live)",
       "variations": [
-        "tested (live)",
-        "tested"
+        "tested",
+        "tested (live)"
       ]
     },
     {
@@ -566,8 +558,8 @@
       "artistName": "Shawn Mendes",
       "baseAlbumName": "Illuminate (Deluxe)",
       "variations": [
-        "illuminate (deluxe)",
-        "illuminate"
+        "illuminate",
+        "illuminate (deluxe)"
       ]
     },
     {
@@ -598,9 +590,9 @@
       "artistName": "The Beach Boys",
       "baseAlbumName": "Pet Sounds (Original Mono & Stereo Mix)",
       "variations": [
-        "pet sounds (original mono & stereo mix)",
         "pet sounds",
-        "pet sounds (mono)"
+        "pet sounds (mono)",
+        "pet sounds (original mono & stereo mix)"
       ]
     },
     {
@@ -615,16 +607,16 @@
       "artistName": "Rancid",
       "baseAlbumName": "Let The Dominoes Fall [Expanded Version]",
       "variations": [
-        "let the dominoes fall [expanded version]",
-        "let the dominoes fall (expanded version)"
+        "let the dominoes fall (expanded version)",
+        "let the dominoes fall [expanded version]"
       ]
     },
     {
       "artistName": "Talking Heads",
       "baseAlbumName": "Speaking in Tongues (Deluxe Version)",
       "variations": [
-        "speaking in tongues (deluxe version)",
-        "speaking in tongues"
+        "speaking in tongues",
+        "speaking in tongues (deluxe version)"
       ]
     },
     {
@@ -649,48 +641,40 @@
       "artistName": "Oasis",
       "baseAlbumName": "Be Here Now (Deluxe Remastered Edition)",
       "variations": [
-        "be here now (deluxe remastered edition)",
-        "be here now"
+        "be here now",
+        "be here now (deluxe remastered edition)"
       ]
     },
     {
       "artistName": "Architects",
       "baseAlbumName": "Daybreaker (Deluxe Edition)",
       "variations": [
-        "daybreaker (deluxe edition)",
-        "daybreaker"
+        "daybreaker",
+        "daybreaker (deluxe edition)"
       ]
     },
     {
       "artistName": "The Cure",
       "baseAlbumName": "The Head On The Door (Remastered)",
       "variations": [
-        "the head on the door (remastered)",
-        "the head on the door"
+        "the head on the door",
+        "the head on the door (remastered)"
       ]
     },
     {
       "artistName": "Spotify",
       "baseAlbumName": "Blissed Out (160)",
       "variations": [
-        "blissed out (160)",
-        "blissed out (150)"
+        "blissed out (150)",
+        "blissed out (160)"
       ]
     },
     {
       "artistName": "The Beatles",
       "baseAlbumName": "The Beatles",
       "variations": [
-        "the beatles (remastered)",
-        "the beatles"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Revolver",
-      "variations": [
-        "revolver (remastered)",
-        "revolver (super deluxe)"
+        "the beatles",
+        "the beatles (remastered)"
       ]
     },
     {
@@ -705,48 +689,48 @@
       "artistName": "Red Hot Chili Peppers",
       "baseAlbumName": "Blood Sugar Sex Magik (Deluxe Edition)",
       "variations": [
-        "blood sugar sex magik (deluxe edition)",
-        "blood sugar sex magik"
+        "blood sugar sex magik",
+        "blood sugar sex magik (deluxe edition)"
       ]
     },
     {
       "artistName": "Red Hot Chili Peppers",
       "baseAlbumName": "Californication (Deluxe Edition)",
       "variations": [
-        "californication (deluxe edition)",
-        "californication"
+        "californication",
+        "californication (deluxe edition)"
       ]
     },
     {
       "artistName": "Red Hot Chili Peppers",
       "baseAlbumName": "By the Way (Deluxe Edition)",
       "variations": [
-        "by the way (deluxe edition)",
-        "by the way"
+        "by the way",
+        "by the way (deluxe edition)"
       ]
     },
     {
       "artistName": "Joy Division",
       "baseAlbumName": "Unknown Pleasures (Collector's Edition)",
       "variations": [
-        "unknown pleasures (collector's edition)",
-        "unknown pleasures"
+        "unknown pleasures",
+        "unknown pleasures (collector's edition)"
       ]
     },
     {
       "artistName": "Foo Fighters",
       "baseAlbumName": "One By One (Expanded Edition)",
       "variations": [
-        "one by one (expanded edition)",
-        "one by one"
+        "one by one",
+        "one by one (expanded edition)"
       ]
     },
     {
       "artistName": "Kid Cudi",
       "baseAlbumName": "Man On The Moon: The End Of Day (Int'l Version)",
       "variations": [
-        "man on the moon: the end of day (int'l version)",
-        "man on the moon: the end of day"
+        "man on the moon: the end of day",
+        "man on the moon: the end of day (int'l version)"
       ]
     },
     {
@@ -761,17 +745,17 @@
       "artistName": "Childish Gambino",
       "baseAlbumName": "Camp (Deluxe Edition)",
       "variations": [
-        "camp (deluxe edition)",
-        "camp"
+        "camp",
+        "camp (deluxe edition)"
       ]
     },
     {
       "artistName": "The Smiths",
       "baseAlbumName": "The Sound of the Smiths (Deluxe; 2008 Remaster)",
       "variations": [
+        "the sound of the smiths",
         "the sound of the smiths (deluxe; 2008 remaster)",
-        "the sound of the smiths (standard digital version)",
-        "the sound of the smiths"
+        "the sound of the smiths (standard digital version)"
       ]
     },
     {
@@ -796,8 +780,8 @@
       "artistName": "The Rolling Stones",
       "baseAlbumName": "Exile On Main Street (Deluxe Version)",
       "variations": [
-        "exile on main street (deluxe version)",
-        "exile on main street (2010 re-mastered)"
+        "exile on main street (2010 re-mastered)",
+        "exile on main street (deluxe version)"
       ]
     },
     {
@@ -820,24 +804,24 @@
       "artistName": "Black Sabbath",
       "baseAlbumName": "Vol. 4 (2009 Remastered Version)",
       "variations": [
-        "vol. 4 (2009 remastered version)",
-        "vol. 4"
+        "vol. 4",
+        "vol. 4 (2009 remastered version)"
       ]
     },
     {
       "artistName": "Black Sabbath",
       "baseAlbumName": "Paranoid (2009 Remastered Version)",
       "variations": [
-        "paranoid (2009 remastered version)",
-        "paranoid"
+        "paranoid",
+        "paranoid (2009 remastered version)"
       ]
     },
     {
       "artistName": "Black Sabbath",
       "baseAlbumName": "Master of Reality (2009 Remastered Version)",
       "variations": [
-        "master of reality (2009 remastered version)",
         "master of reality",
+        "master of reality (2009 remastered version)",
         "master of reality (deluxe edition)"
       ]
     },
@@ -845,8 +829,8 @@
       "artistName": "Black Sabbath",
       "baseAlbumName": "Black Sabbath (2009 Remastered Version)",
       "variations": [
-        "black sabbath (2009 remastered version)",
         "black sabbath",
+        "black sabbath (2009 remastered version)",
         "black sabbath (deluxe edition)"
       ]
     },
@@ -854,17 +838,17 @@
       "artistName": "Nirvana",
       "baseAlbumName": "MTV Unplugged In New York (25th Anniversary)",
       "variations": [
-        "mtv unplugged in new york (25th anniversary)",
-        "mtv unplugged in new york"
+        "mtv unplugged in new york",
+        "mtv unplugged in new york (25th anniversary)"
       ]
     },
     {
       "artistName": "Nirvana",
       "baseAlbumName": "Nevermind (Remastered)",
       "variations": [
-        "nevermind (remastered)",
         "nevermind",
-        "nevermind (deluxe edition)"
+        "nevermind (deluxe edition)",
+        "nevermind (remastered)"
       ]
     },
     {
@@ -887,8 +871,8 @@
       "artistName": "Nick Cave & The Bad Seeds",
       "baseAlbumName": "Murder Ballads (Remastered)",
       "variations": [
-        "murder ballads (remastered)",
-        "murder ballads (2011 remastered version)"
+        "murder ballads (2011 remastered version)",
+        "murder ballads (remastered)"
       ]
     },
     {
@@ -903,8 +887,8 @@
       "artistName": "Pixies",
       "baseAlbumName": "Surfer Rosa (Remastered)",
       "variations": [
-        "surfer rosa (remastered)",
-        "surfer rosa"
+        "surfer rosa",
+        "surfer rosa (remastered)"
       ]
     },
     {
@@ -919,17 +903,17 @@
       "artistName": "Drake",
       "baseAlbumName": "Nothing Was The Same (Deluxe)",
       "variations": [
-        "nothing was the same (deluxe)",
-        "nothing was the same"
+        "nothing was the same",
+        "nothing was the same (deluxe)"
       ]
     },
     {
       "artistName": "The Smashing Pumpkins",
       "baseAlbumName": "Mellon Collie And The Infinite Sadness (Remastered)",
       "variations": [
-        "mellon collie and the infinite sadness (remastered)",
+        "mellon collie and the infinite sadness",
         "mellon collie and the infinite sadness (deluxe edition)",
-        "mellon collie and the infinite sadness"
+        "mellon collie and the infinite sadness (remastered)"
       ]
     },
     {
@@ -944,16 +928,16 @@
       "artistName": "Vince Guaraldi Trio",
       "baseAlbumName": "A Charlie Brown Christmas [2012 Remastered & Expanded Edition]",
       "variations": [
-        "a charlie brown christmas [2012 remastered & expanded edition]",
-        "a charlie brown christmas (remastered & expanded edition)"
+        "a charlie brown christmas (remastered & expanded edition)",
+        "a charlie brown christmas [2012 remastered & expanded edition]"
       ]
     },
     {
       "artistName": "Black Lips",
       "baseAlbumName": "Underneath the Rainbow (Bonus Track Version)",
       "variations": [
-        "underneath the rainbow (bonus track version)",
-        "underneath the rainbow"
+        "underneath the rainbow",
+        "underneath the rainbow (bonus track version)"
       ]
     },
     {
@@ -976,8 +960,8 @@
       "artistName": "Jimmy Eat World",
       "baseAlbumName": "Bleed American (Deluxe Edition)",
       "variations": [
-        "bleed american (deluxe edition)",
-        "bleed american"
+        "bleed american",
+        "bleed american (deluxe edition)"
       ]
     },
     {
@@ -992,8 +976,8 @@
       "artistName": "Tom Waits",
       "baseAlbumName": "Blue Valentine (Remastered)",
       "variations": [
-        "blue valentine (remastered)",
-        "blue valentine"
+        "blue valentine",
+        "blue valentine (remastered)"
       ]
     },
     {
@@ -1016,8 +1000,8 @@
       "artistName": "The Jesus and Mary Chain",
       "baseAlbumName": "Psychocandy (Expanded Version)",
       "variations": [
-        "psychocandy (expanded version)",
-        "psychocandy"
+        "psychocandy",
+        "psychocandy (expanded version)"
       ]
     },
     {
@@ -1025,8 +1009,8 @@
       "baseAlbumName": "Led Zeppelin",
       "variations": [
         "led zeppelin",
-        "led zeppelin (remaster)",
-        "led zeppelin (deluxe edition)"
+        "led zeppelin (deluxe edition)",
+        "led zeppelin (remaster)"
       ]
     },
     {
@@ -1041,9 +1025,9 @@
       "artistName": "Led Zeppelin",
       "baseAlbumName": "Led Zeppelin IV (Remaster)",
       "variations": [
-        "led zeppelin iv (remaster)",
+        "led zeppelin iv",
         "led zeppelin iv (deluxe edition)",
-        "led zeppelin iv"
+        "led zeppelin iv (remaster)"
       ]
     },
     {
@@ -1059,24 +1043,24 @@
       "artistName": "Led Zeppelin",
       "baseAlbumName": "Led Zeppelin III (Remaster)",
       "variations": [
-        "led zeppelin iii (remaster)",
-        "led zeppelin iii (deluxe edition)"
+        "led zeppelin iii (deluxe edition)",
+        "led zeppelin iii (remaster)"
       ]
     },
     {
       "artistName": "Led Zeppelin",
       "baseAlbumName": "Houses of the Holy (Remaster)",
       "variations": [
-        "houses of the holy (remaster)",
-        "houses of the holy (1994 remaster)"
+        "houses of the holy (1994 remaster)",
+        "houses of the holy (remaster)"
       ]
     },
     {
       "artistName": "Lana Del Rey",
       "baseAlbumName": "Ultraviolence (Deluxe)",
       "variations": [
-        "ultraviolence (deluxe)",
-        "ultraviolence"
+        "ultraviolence",
+        "ultraviolence (deluxe)"
       ]
     },
     {
@@ -1107,18 +1091,18 @@
       "artistName": "Michael Kiwanuka",
       "baseAlbumName": "Home Again (Deluxe Version)",
       "variations": [
-        "home again (deluxe version)",
-        "home again"
+        "home again",
+        "home again (deluxe version)"
       ]
     },
     {
       "artistName": "In Flames",
       "baseAlbumName": "Clayman (Reissue 2014)",
       "variations": [
-        "clayman (reissue 2014)",
-        "clayman (re-issue 2014)",
         "clayman",
-        "clayman (20th anniversary edition)"
+        "clayman (20th anniversary edition)",
+        "clayman (re-issue 2014)",
+        "clayman (reissue 2014)"
       ]
     },
     {
@@ -1133,17 +1117,17 @@
       "artistName": "In Flames",
       "baseAlbumName": "Reroute to Remain (Reissue 2014)",
       "variations": [
-        "reroute to remain (reissue 2014)",
         "reroute to remain",
-        "reroute to remain (re-issue 2014)"
+        "reroute to remain (re-issue 2014)",
+        "reroute to remain (reissue 2014)"
       ]
     },
     {
       "artistName": "Stevie Wonder",
       "baseAlbumName": "Songs In The Key Of Life (Reissue)",
       "variations": [
-        "songs in the key of life (reissue)",
-        "songs in the key of life"
+        "songs in the key of life",
+        "songs in the key of life (reissue)"
       ]
     },
     {
@@ -1174,8 +1158,8 @@
       "artistName": "Sonic Youth",
       "baseAlbumName": "Confusion Is Sex (Plus Kill Yr. Idols)",
       "variations": [
-        "confusion is sex (plus kill yr. idols)",
-        "confusion is sex"
+        "confusion is sex",
+        "confusion is sex (plus kill yr. idols)"
       ]
     },
     {
@@ -1198,8 +1182,8 @@
       "artistName": "Dumdum Boys",
       "baseAlbumName": "Blodig Alvor Na Na Na Na Na (Remastered 2015)",
       "variations": [
-        "blodig alvor na na na na na (remastered 2015)",
-        "blodig alvor na na na na na"
+        "blodig alvor na na na na na",
+        "blodig alvor na na na na na (remastered 2015)"
       ]
     },
     {
@@ -1214,24 +1198,24 @@
       "artistName": "Dumdum Boys",
       "baseAlbumName": "Splitter Pine (Remastered 2015)",
       "variations": [
-        "splitter pine (remastered 2015)",
-        "splitter pine"
+        "splitter pine",
+        "splitter pine (remastered 2015)"
       ]
     },
     {
       "artistName": "Jimmy Cliff",
       "baseAlbumName": "The Harder They Come (Remastered)",
       "variations": [
-        "the harder they come (remastered)",
-        "the harder they come (original motion picture soundtrack)"
+        "the harder they come (original motion picture soundtrack)",
+        "the harder they come (remastered)"
       ]
     },
     {
       "artistName": "deLillos",
       "baseAlbumName": "Neste sommer (Jubileumsutgave) [Remastered]",
       "variations": [
-        "neste sommer (jubileumsutgave) [remastered]",
-        "neste sommer"
+        "neste sommer",
+        "neste sommer (jubileumsutgave) [remastered]"
       ]
     },
     {
@@ -1239,8 +1223,8 @@
       "baseAlbumName": "Harvest",
       "variations": [
         "harvest",
-        "harvest (50th anniversary edition)",
-        "harvest (2009 remaster)"
+        "harvest (2009 remaster)",
+        "harvest (50th anniversary edition)"
       ]
     },
     {
@@ -1263,16 +1247,16 @@
       "artistName": "Junior Varsity",
       "baseAlbumName": "My Star (Deluxe)",
       "variations": [
-        "my star (deluxe)",
-        "my star"
+        "my star",
+        "my star (deluxe)"
       ]
     },
     {
       "artistName": "Linkin Park",
       "baseAlbumName": "A Thousand Suns (Bonus Edition)",
       "variations": [
-        "a thousand suns (bonus edition)",
-        "a thousand suns"
+        "a thousand suns",
+        "a thousand suns (bonus edition)"
       ]
     },
     {
@@ -1304,24 +1288,24 @@
       "artistName": "George Harrison",
       "baseAlbumName": "All Things Must Pass (Remastered 2014)",
       "variations": [
-        "all things must pass (remastered 2014)",
-        "all things must pass (2014 remaster)"
+        "all things must pass (2014 remaster)",
+        "all things must pass (remastered 2014)"
       ]
     },
     {
       "artistName": "Dr. Dre",
       "baseAlbumName": "2001 (Explicit Version)",
       "variations": [
-        "2001 (explicit version)",
-        "2001"
+        "2001",
+        "2001 (explicit version)"
       ]
     },
     {
       "artistName": "Limp Bizkit",
       "baseAlbumName": "Significant Other (Explicit)",
       "variations": [
-        "significant other (explicit)",
-        "significant other"
+        "significant other",
+        "significant other (explicit)"
       ]
     },
     {
@@ -1344,8 +1328,8 @@
       "artistName": "Alice In Chains",
       "baseAlbumName": "Dirt (2022 Remaster)",
       "variations": [
-        "dirt (2022 remaster)",
-        "dirt"
+        "dirt",
+        "dirt (2022 remaster)"
       ]
     },
     {
@@ -1360,24 +1344,24 @@
       "artistName": "Iron Maiden",
       "baseAlbumName": "The Number of the Beast (2015 Remaster)",
       "variations": [
-        "the number of the beast (2015 remaster)",
-        "the number of the beast (1998 remastered edition)"
+        "the number of the beast (1998 remastered edition)",
+        "the number of the beast (2015 remaster)"
       ]
     },
     {
       "artistName": "Iron Maiden",
       "baseAlbumName": "Piece of Mind (2015 Remaster)",
       "variations": [
-        "piece of mind (2015 remaster)",
-        "piece of mind (1998 remastered edition)"
+        "piece of mind (1998 remastered edition)",
+        "piece of mind (2015 remaster)"
       ]
     },
     {
       "artistName": "Iron Maiden",
       "baseAlbumName": "Powerslave (2015 Remaster)",
       "variations": [
-        "powerslave (2015 remaster)",
-        "powerslave (1998 remastered edition)"
+        "powerslave (1998 remastered edition)",
+        "powerslave (2015 remaster)"
       ]
     },
     {
@@ -1392,16 +1376,16 @@
       "artistName": "The Notorious B.I.G.",
       "baseAlbumName": "Life After Death (Deluxe Version)",
       "variations": [
-        "life after death (deluxe version)",
-        "life after death (2014 remastered edition)"
+        "life after death (2014 remastered edition)",
+        "life after death (deluxe version)"
       ]
     },
     {
       "artistName": "Jamie xx",
       "baseAlbumName": "In Waves (Deluxe)",
       "variations": [
-        "in waves (deluxe)",
-        "in waves"
+        "in waves",
+        "in waves (deluxe)"
       ]
     },
     {
@@ -1416,8 +1400,8 @@
       "artistName": "Klangkarussell",
       "baseAlbumName": "Netzwerk (Falls Like Rain)",
       "variations": [
-        "netzwerk (falls like rain)",
-        "netzwerk"
+        "netzwerk",
+        "netzwerk (falls like rain)"
       ]
     },
     {
@@ -1448,8 +1432,8 @@
       "artistName": "Disclosure",
       "baseAlbumName": "Settle (Special Edition)",
       "variations": [
-        "settle (special edition)",
-        "settle (deluxe version)"
+        "settle (deluxe version)",
+        "settle (special edition)"
       ]
     },
     {
@@ -1472,8 +1456,8 @@
       "artistName": "Everyone Everywhere",
       "baseAlbumName": "Everyone Everywhere (2012)",
       "variations": [
-        "everyone everywhere (2012)",
-        "everyone everywhere"
+        "everyone everywhere",
+        "everyone everywhere (2012)"
       ]
     },
     {
@@ -1496,8 +1480,8 @@
       "artistName": "Refused",
       "baseAlbumName": "The Shape Of Punk To Come [Deluxe Version]",
       "variations": [
-        "the shape of punk to come [deluxe version]",
-        "the shape of punk to come (deluxe edition)"
+        "the shape of punk to come (deluxe edition)",
+        "the shape of punk to come [deluxe version]"
       ]
     },
     {
@@ -1520,16 +1504,16 @@
       "artistName": "Major Lazer",
       "baseAlbumName": "Free The Universe Deluxe",
       "variations": [
-        "free the universe deluxe",
-        "free the universe"
+        "free the universe",
+        "free the universe deluxe"
       ]
     },
     {
       "artistName": "Elton John",
       "baseAlbumName": "Goodbye Yellow Brick Road (Remastered)",
       "variations": [
-        "goodbye yellow brick road (remastered)",
-        "goodbye yellow brick road (remastered / deluxe edition)"
+        "goodbye yellow brick road (remastered / deluxe edition)",
+        "goodbye yellow brick road (remastered)"
       ]
     },
     {
@@ -1544,16 +1528,16 @@
       "artistName": "R.E.M.",
       "baseAlbumName": "Out Of Time (U.S. Version)",
       "variations": [
-        "out of time (u.s. version)",
-        "out of time (25th anniversary edition)"
+        "out of time (25th anniversary edition)",
+        "out of time (u.s. version)"
       ]
     },
     {
       "artistName": "Gold Panda",
       "baseAlbumName": "Lucky Shiner (Deluxe Edition)",
       "variations": [
-        "lucky shiner (deluxe edition)",
-        "lucky shiner"
+        "lucky shiner",
+        "lucky shiner (deluxe edition)"
       ]
     },
     {
@@ -1568,16 +1552,16 @@
       "artistName": "Arcade Fire",
       "baseAlbumName": "The Suburbs (Deluxe)",
       "variations": [
-        "the suburbs (deluxe)",
-        "the suburbs"
+        "the suburbs",
+        "the suburbs (deluxe)"
       ]
     },
     {
       "artistName": "Imagine Dragons",
       "baseAlbumName": "Night Visions (Deluxe)",
       "variations": [
-        "night visions (deluxe)",
-        "night visions"
+        "night visions",
+        "night visions (deluxe)"
       ]
     },
     {
@@ -1608,8 +1592,8 @@
       "artistName": "The Verve",
       "baseAlbumName": "Urban Hymns (Remastered 2016)",
       "variations": [
-        "urban hymns (remastered 2016)",
-        "urban hymns"
+        "urban hymns",
+        "urban hymns (remastered 2016)"
       ]
     },
     {
@@ -1632,8 +1616,8 @@
       "artistName": "Bryan Adams",
       "baseAlbumName": "Spirit: Stallion Of The Cimarron (Soundtrack)",
       "variations": [
-        "spirit: stallion of the cimarron (soundtrack)",
-        "spirit: stallion of the cimarron (music from the original motion picture)"
+        "spirit: stallion of the cimarron (music from the original motion picture)",
+        "spirit: stallion of the cimarron (soundtrack)"
       ]
     },
     {
@@ -1648,24 +1632,17 @@
       "artistName": "The Interrupters",
       "baseAlbumName": "The Interrupters (Deluxe Edition)",
       "variations": [
-        "the interrupters (deluxe edition)",
-        "the interrupters"
-      ]
-    },
-    {
-      "artistName": "Eddie Vedder",
-      "baseAlbumName": "Into The Wild (Music For The Motion Picture)",
-      "variations": [
-        "into the wild",
-        "into the wild (music for the motion picture)",
-        "music for the motion picture into the wild"
+        "the interrupters",
+        "the interrupters (deluxe edition)"
       ]
     },
     {
       "artistName": "Moderat",
       "baseAlbumName": "III",
       "variations": [
-        "iii (deluxe edition)"
+        "iii",
+        "iii (deluxe edition)",
+        "iii (instrumentals)"
       ]
     },
     {
@@ -1673,20 +1650,6 @@
       "baseAlbumName": "Rubber Soul",
       "variations": [
         "rubber soul (remastered)"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Abbey Road",
-      "variations": [
-        "abbey road (remastered)"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Revolver",
-      "variations": [
-        "revolver (remastered)"
       ]
     },
     {
@@ -1715,50 +1678,10 @@
     },
     {
       "artistName": "David Bowie",
-      "baseAlbumName": "Hunky Dory",
-      "variations": [
-        "hunky dory (2015 remaster)",
-        "hunky dory"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "Low",
-      "variations": [
-        "low (2017 remaster)",
-        "low (1999 remaster)"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "Let's Dance",
-      "variations": [
-        "let's dance (1999 remaster)",
-        "let's dance (2018 remaster)"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
       "baseAlbumName": "Scary Monsters",
       "variations": [
         "scary monsters (and super creeps) [2017 remaster]",
         "scary monsters"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "Aladdin Sane",
-      "variations": [
-        "aladdin sane (2013 remaster)",
-        "aladdin sane (40th anniversary)"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "Tonight",
-      "variations": [
-        "tonight (1999 remaster)",
-        "tonight (2018 remaster)"
       ]
     },
     {
@@ -1778,14 +1701,6 @@
       ]
     },
     {
-      "artistName": "David Bowie",
-      "baseAlbumName": "The Man Who Sold The World",
-      "variations": [
-        "the man who sold the world (2015 remaster)",
-        "the man who sold the world"
-      ]
-    },
-    {
       "artistName": "Mac Miller",
       "baseAlbumName": "Mac Miller - Circles",
       "variations": [
@@ -1797,16 +1712,8 @@
       "artistName": "Mac Miller",
       "baseAlbumName": "Watching Movies with the Sound Off",
       "variations": [
-        "watching movies with the sound off (deluxe edition)",
-        "watching movies with the sound off"
-      ]
-    },
-    {
-      "artistName": "Kanye West",
-      "baseAlbumName": "Homecoming",
-      "variations": [
-        "homecoming",
-        "homecoming (int'l instant gratification track)"
+        "watching movies with the sound off",
+        "watching movies with the sound off (deluxe edition)"
       ]
     },
     {
@@ -1818,51 +1725,11 @@
       ]
     },
     {
-      "artistName": "Bon Iver",
-      "baseAlbumName": "Bon Iver",
-      "variations": [
-        "bon iver",
-        "bon iver (10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Bon Iver",
-      "baseAlbumName": "Blood Bank",
-      "variations": [
-        "blood bank",
-        "blood bank (live from ericsson globe, stockholm se, oct 31 2018)"
-      ]
-    },
-    {
       "artistName": "Basement",
       "baseAlbumName": "Promise Everything",
       "variations": [
         "promise everything (deluxe)",
         "promise everything"
-      ]
-    },
-    {
-      "artistName": "Flume",
-      "baseAlbumName": "The Difference",
-      "variations": [
-        "the difference",
-        "the difference (jon hopkins remix)"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "II",
-      "variations": [
-        "ii",
-        "ii (10th anniversary sped-up edition)"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "Moderat",
-      "variations": [
-        "moderat",
-        "moderat (deluxe version)"
       ]
     },
     {
@@ -1879,14 +1746,6 @@
       "variations": [
         "aerial (2018 remaster)",
         "aerial"
-      ]
-    },
-    {
-      "artistName": "Kate Bush",
-      "baseAlbumName": "The Red Shoes",
-      "variations": [
-        "the red shoes",
-        "the red shoes (2018 remaster)"
       ]
     },
     {
@@ -1914,30 +1773,6 @@
       ]
     },
     {
-      "artistName": "Fleetwood Mac",
-      "baseAlbumName": "Rumours",
-      "variations": [
-        "rumours",
-        "rumours (super deluxe)"
-      ]
-    },
-    {
-      "artistName": "Fleetwood Mac",
-      "baseAlbumName": "Fleetwood Mac",
-      "variations": [
-        "fleetwood mac",
-        "fleetwood mac (2017 remaster)"
-      ]
-    },
-    {
-      "artistName": "John Lennon",
-      "baseAlbumName": "Plastic Ono Band",
-      "variations": [
-        "plastic ono band",
-        "plastic ono band (the ultimate collection)"
-      ]
-    },
-    {
       "artistName": "Tigers Jaw",
       "baseAlbumName": "Belongs to the Dead",
       "variations": [
@@ -1954,35 +1789,11 @@
       ]
     },
     {
-      "artistName": "Pinegrove",
-      "baseAlbumName": "Cardinal",
-      "variations": [
-        "cardinal",
-        "cardinal (expanded edition)"
-      ]
-    },
-    {
       "artistName": "Big Thief",
       "baseAlbumName": "Masterpiece",
       "variations": [
         "masterpiece (2023 remaster)",
         "masterpiece"
-      ]
-    },
-    {
-      "artistName": "Post Malone",
-      "baseAlbumName": "Stoney",
-      "variations": [
-        "stoney",
-        "stoney (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "No Control",
-      "variations": [
-        "no control",
-        "no control (re-issue)"
       ]
     },
     {
@@ -2018,51 +1829,11 @@
       ]
     },
     {
-      "artistName": "Turnover",
-      "baseAlbumName": "Peripheral Vision",
-      "variations": [
-        "peripheral vision",
-        "peripheral vision (10 year anniversary deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Oslo Ess",
-      "baseAlbumName": "Verden På Nakken, Venner I Ryggen",
-      "variations": [
-        "verden på nakken, venner i ryggen",
-        "verden på nakken, venner i ryggen (spotify exclusive bonus track)"
-      ]
-    },
-    {
-      "artistName": "Sufjan Stevens",
-      "baseAlbumName": "Carrie & Lowell",
-      "variations": [
-        "carrie & lowell",
-        "carrie & lowell (10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Marvin Gaye",
-      "baseAlbumName": "What's Going On",
-      "variations": [
-        "what's going on",
-        "what's going on (remastered w/bonus tracks)"
-      ]
-    },
-    {
       "artistName": "Ben Howard",
       "baseAlbumName": "Every Kingdom",
       "variations": [
         "every kingdom (deluxe version)",
         "every kingdom"
-      ]
-    },
-    {
-      "artistName": "Shawn Mendes",
-      "baseAlbumName": "Shawn Mendes",
-      "variations": [
-        "shawn mendes",
-        "shawn mendes (deluxe)"
       ]
     },
     {
@@ -2074,44 +1845,12 @@
       ]
     },
     {
-      "artistName": "Shawn Mendes",
-      "baseAlbumName": "Handwritten",
-      "variations": [
-        "handwritten",
-        "handwritten (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Elliott Smith",
-      "baseAlbumName": "Either/Or",
-      "variations": [
-        "either/or",
-        "either/or (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Fontaines D.C.",
-      "baseAlbumName": "Romance",
-      "variations": [
-        "romance",
-        "romance (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "The Beach Boys",
       "baseAlbumName": "Pet Sounds",
       "variations": [
         "pet sounds (original mono & stereo mix)",
         "pet sounds",
         "pet sounds (mono)"
-      ]
-    },
-    {
-      "artistName": "Rancid",
-      "baseAlbumName": "Indestructible",
-      "variations": [
-        "indestructible",
-        "indestructible (limited edition-pa version)"
       ]
     },
     {
@@ -2160,22 +1899,6 @@
       "variations": [
         "blissed out (160)",
         "blissed out (150)"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "The Beatles",
-      "variations": [
-        "the beatles (remastered)",
-        "the beatles"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Revolver",
-      "variations": [
-        "revolver (remastered)",
-        "revolver (super deluxe)"
       ]
     },
     {
@@ -2235,14 +1958,6 @@
       ]
     },
     {
-      "artistName": "American Football",
-      "baseAlbumName": "American Football",
-      "variations": [
-        "american football",
-        "american football (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "Childish Gambino",
       "baseAlbumName": "Camp",
       "variations": [
@@ -2260,27 +1975,11 @@
       ]
     },
     {
-      "artistName": "The Smiths",
-      "baseAlbumName": "The Queen Is Dead",
-      "variations": [
-        "the queen is dead",
-        "the queen is dead (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "The Rolling Stones",
       "baseAlbumName": "Exile On Main Street",
       "variations": [
         "exile on main street (deluxe version)",
         "exile on main street (2010 re-mastered)"
-      ]
-    },
-    {
-      "artistName": "Jokke med Tourettes",
-      "baseAlbumName": "Billig Lykke",
-      "variations": [
-        "billig lykke",
-        "billig lykke (re-mastret)"
       ]
     },
     {
@@ -2343,35 +2042,11 @@
       ]
     },
     {
-      "artistName": "The Lumineers",
-      "baseAlbumName": "Cleopatra",
-      "variations": [
-        "cleopatra",
-        "cleopatra (deluxe)"
-      ]
-    },
-    {
-      "artistName": "The Lumineers",
-      "baseAlbumName": "The Lumineers",
-      "variations": [
-        "the lumineers",
-        "the lumineers (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "Nick Cave & The Bad Seeds",
       "baseAlbumName": "Murder Ballads",
       "variations": [
         "murder ballads (remastered)",
         "murder ballads (2011 remastered version)"
-      ]
-    },
-    {
-      "artistName": "Nick Cave & The Bad Seeds",
-      "baseAlbumName": "Push the Sky Away",
-      "variations": [
-        "push the sky away",
-        "push the sky away (deluxe edition)"
       ]
     },
     {
@@ -2432,35 +2107,11 @@
       ]
     },
     {
-      "artistName": "Green Day",
-      "baseAlbumName": "American Idiot",
-      "variations": [
-        "american idiot",
-        "american idiot (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Beastie Boys",
-      "baseAlbumName": "Paul's Boutique",
-      "variations": [
-        "paul's boutique",
-        "paul's boutique (20th anniversary edition / remastered)"
-      ]
-    },
-    {
       "artistName": "Jimmy Eat World",
       "baseAlbumName": "Bleed American",
       "variations": [
         "bleed american (deluxe edition)",
         "bleed american"
-      ]
-    },
-    {
-      "artistName": "Jimmy Eat World",
-      "baseAlbumName": "Futures",
-      "variations": [
-        "futures",
-        "futures (international version)"
       ]
     },
     {
@@ -2472,36 +2123,11 @@
       ]
     },
     {
-      "artistName": "Tom Waits",
-      "baseAlbumName": "Foreign Affairs",
-      "variations": [
-        "foreign affairs",
-        "foreign affairs (remastered)"
-      ]
-    },
-    {
-      "artistName": "Tom Waits",
-      "baseAlbumName": "Closing Time",
-      "variations": [
-        "closing time",
-        "closing time (remastered)"
-      ]
-    },
-    {
       "artistName": "The Jesus and Mary Chain",
       "baseAlbumName": "Psychocandy",
       "variations": [
         "psychocandy (expanded version)",
         "psychocandy"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Led Zeppelin",
-      "variations": [
-        "led zeppelin",
-        "led zeppelin (remaster)",
-        "led zeppelin (deluxe edition)"
       ]
     },
     {
@@ -2563,30 +2189,6 @@
       ]
     },
     {
-      "artistName": "Nick Mulvey",
-      "baseAlbumName": "First Mind",
-      "variations": [
-        "first mind",
-        "first mind (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Nick Mulvey",
-      "baseAlbumName": "Wake Up Now",
-      "variations": [
-        "wake up now",
-        "wake up now (unplugged)"
-      ]
-    },
-    {
-      "artistName": "Flipsyde",
-      "baseAlbumName": "We The People",
-      "variations": [
-        "we the people",
-        "we the people (international version)"
-      ]
-    },
-    {
       "artistName": "Michael Kiwanuka",
       "baseAlbumName": "Home Again",
       "variations": [
@@ -2602,14 +2204,6 @@
         "clayman (re-issue 2014)",
         "clayman",
         "clayman (20th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "In Flames",
-      "baseAlbumName": "A Sense Of Purpose",
-      "variations": [
-        "a sense of purpose",
-        "a sense of purpose (re-issue 2014)"
       ]
     },
     {
@@ -2630,22 +2224,6 @@
       ]
     },
     {
-      "artistName": "Stevie Wonder",
-      "baseAlbumName": "Innervisions",
-      "variations": [
-        "innervisions",
-        "innervisions (reissue)"
-      ]
-    },
-    {
-      "artistName": "The Postal Service",
-      "baseAlbumName": "Give Up",
-      "variations": [
-        "give up",
-        "give up (deluxe 10th anniversary edition)"
-      ]
-    },
-    {
       "artistName": "Sonic Youth",
       "baseAlbumName": "Daydream Nation",
       "variations": [
@@ -2662,35 +2240,11 @@
       ]
     },
     {
-      "artistName": "Vance Joy",
-      "baseAlbumName": "Dream Your Life Away",
-      "variations": [
-        "dream your life away",
-        "dream your life away (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "blink-182",
-      "baseAlbumName": "blink-182",
-      "variations": [
-        "blink-182",
-        "blink-182 (international version)"
-      ]
-    },
-    {
       "artistName": "Dumdum Boys",
       "baseAlbumName": "Blodig Alvor Na Na Na Na Na",
       "variations": [
         "blodig alvor na na na na na (remastered 2015)",
         "blodig alvor na na na na na"
-      ]
-    },
-    {
-      "artistName": "Dumdum Boys",
-      "baseAlbumName": "Gravitasjon",
-      "variations": [
-        "gravitasjon",
-        "gravitasjon (remastered 2015)"
       ]
     },
     {
@@ -2718,31 +2272,6 @@
       ]
     },
     {
-      "artistName": "Neil Young",
-      "baseAlbumName": "Harvest",
-      "variations": [
-        "harvest",
-        "harvest (50th anniversary edition)",
-        "harvest (2009 remaster)"
-      ]
-    },
-    {
-      "artistName": "Eminem",
-      "baseAlbumName": "The Marshall Mathers LP",
-      "variations": [
-        "the marshall mathers lp",
-        "the marshall mathers lp (25th anniversary)"
-      ]
-    },
-    {
-      "artistName": "Eminem",
-      "baseAlbumName": "The Slim Shady LP",
-      "variations": [
-        "the slim shady lp",
-        "the slim shady lp (explicit)"
-      ]
-    },
-    {
       "artistName": "Junior Varsity",
       "baseAlbumName": "My Star",
       "variations": [
@@ -2767,28 +2296,12 @@
       ]
     },
     {
-      "artistName": "alt-J",
-      "baseAlbumName": "An Awesome Wave",
-      "variations": [
-        "an awesome wave",
-        "an awesome wave (deluxe version)"
-      ]
-    },
-    {
       "artistName": "Motörhead",
       "baseAlbumName": "Overkill",
       "variations": [
         "overkill (deluxe edition)",
         "overkill (expanded bonus track edition)",
         "overkill (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "The Maccabees",
-      "baseAlbumName": "Wall of Arms",
-      "variations": [
-        "wall of arms",
-        "wall of arms (deluxe edition)"
       ]
     },
     {
@@ -2824,27 +2337,11 @@
       ]
     },
     {
-      "artistName": "Cocteau Twins",
-      "baseAlbumName": "Heaven or Las Vegas",
-      "variations": [
-        "heaven or las vegas",
-        "heaven or las vegas (remastered)"
-      ]
-    },
-    {
       "artistName": "Alice In Chains",
       "baseAlbumName": "Alice In Chains - Dirt",
       "variations": [
         "dirt (2022 remaster)",
         "dirt"
-      ]
-    },
-    {
-      "artistName": "Turbowolf",
-      "baseAlbumName": "Turbowolf",
-      "variations": [
-        "turbowolf",
-        "turbowolf (deluxe edition)"
       ]
     },
     {
@@ -2896,43 +2393,11 @@
       ]
     },
     {
-      "artistName": "David Byrne",
-      "baseAlbumName": "Everything That Happens Will Happen Today",
-      "variations": [
-        "everything that happens will happen today",
-        "everything that happens will happen today (deluxe)"
-      ]
-    },
-    {
       "artistName": "Klangkarussell",
       "baseAlbumName": "Netzwerk",
       "variations": [
         "netzwerk (falls like rain)",
         "netzwerk"
-      ]
-    },
-    {
-      "artistName": "Operation Ivy",
-      "baseAlbumName": "Operation Ivy",
-      "variations": [
-        "operation ivy",
-        "operation ivy (2007 remaster)"
-      ]
-    },
-    {
-      "artistName": "Jeff Buckley",
-      "baseAlbumName": "Grace",
-      "variations": [
-        "grace",
-        "grace (legacy edition)"
-      ]
-    },
-    {
-      "artistName": "Slow Pulp",
-      "baseAlbumName": "Moveys",
-      "variations": [
-        "moveys",
-        "moveys (deluxe edition)"
       ]
     },
     {
@@ -2944,27 +2409,11 @@
       ]
     },
     {
-      "artistName": "Yeah Yeah Yeahs",
-      "baseAlbumName": "Fever To Tell",
-      "variations": [
-        "fever to tell",
-        "fever to tell (deluxe remastered)"
-      ]
-    },
-    {
       "artistName": "Ramones",
       "baseAlbumName": "Ramones",
       "variations": [
         "ramones (expanded)",
         "ramones (40th anniversary deluxe edition; 2016 remaster)"
-      ]
-    },
-    {
-      "artistName": "Unknown Mortal Orchestra",
-      "baseAlbumName": "II",
-      "variations": [
-        "ii",
-        "ii (deluxe edition)"
       ]
     },
     {
@@ -2984,14 +2433,6 @@
       ]
     },
     {
-      "artistName": "Judas Priest",
-      "baseAlbumName": "Screaming For Vengeance",
-      "variations": [
-        "screaming for vengeance",
-        "screaming for vengeance (expanded edition)"
-      ]
-    },
-    {
       "artistName": "Refused",
       "baseAlbumName": "The Shape Of Punk To Come",
       "variations": [
@@ -3005,14 +2446,6 @@
       "variations": [
         "music from big pink (expanded edition)",
         "music from big pink (remastered)"
-      ]
-    },
-    {
-      "artistName": "Rise Against",
-      "baseAlbumName": "Appeal To Reason",
-      "variations": [
-        "appeal to reason",
-        "appeal to reason (international version)"
       ]
     },
     {
@@ -3032,14 +2465,6 @@
       ]
     },
     {
-      "artistName": "Elton John",
-      "baseAlbumName": "Too Low For Zero",
-      "variations": [
-        "too low for zero",
-        "too low for zero (remastered with bonus tracks)"
-      ]
-    },
-    {
       "artistName": "R.E.M.",
       "baseAlbumName": "Out of Time",
       "variations": [
@@ -3053,14 +2478,6 @@
       "variations": [
         "lucky shiner (deluxe edition)",
         "lucky shiner"
-      ]
-    },
-    {
-      "artistName": "Disturbed",
-      "baseAlbumName": "The Sickness",
-      "variations": [
-        "the sickness",
-        "the sickness (10th anniversary edition)"
       ]
     },
     {
@@ -3080,51 +2497,11 @@
       ]
     },
     {
-      "artistName": "City and Colour",
-      "baseAlbumName": "Bring Me Your Love",
-      "variations": [
-        "bring me your love",
-        "bring me your love (special edition)"
-      ]
-    },
-    {
-      "artistName": "Royel Otis",
-      "baseAlbumName": "PRATTS & PAIN",
-      "variations": [
-        "pratts & pain",
-        "pratts & pain (it ain't over til it ends edition)"
-      ]
-    },
-    {
-      "artistName": "Lagwagon",
-      "baseAlbumName": "Let's Talk About Feelings",
-      "variations": [
-        "let's talk about feelings",
-        "let's talk about feelings (reissue)"
-      ]
-    },
-    {
       "artistName": "The Verve",
       "baseAlbumName": "Urban Hymns",
       "variations": [
         "urban hymns (remastered 2016)",
         "urban hymns"
-      ]
-    },
-    {
-      "artistName": "Mercury Rev",
-      "baseAlbumName": "Deserter's Songs",
-      "variations": [
-        "deserter's songs",
-        "deserter's songs (remastered)"
-      ]
-    },
-    {
-      "artistName": "Razorlight",
-      "baseAlbumName": "Razorlight",
-      "variations": [
-        "razorlight",
-        "razorlight (edeluxe version)"
       ]
     },
     {
@@ -3160,46 +2537,6 @@
       ]
     },
     {
-      "artistName": "Eddie Vedder",
-      "baseAlbumName": "Into The Wild (Music For The Motion Picture)",
-      "variations": [
-        "into the wild",
-        "into the wild (music for the motion picture)",
-        "music for the motion picture into the wild"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Abbey Road",
-      "variations": [
-        "abbey road (remastered)"
-      ]
-    },
-    {
-      "artistName": "Mac Miller",
-      "baseAlbumName": "Watching Movies With The Sound Off",
-      "variations": [
-        "watching movies with the sound off (deluxe edition)",
-        "watching movies with the sound off"
-      ]
-    },
-    {
-      "artistName": "Eddie Vedder",
-      "baseAlbumName": "Into The Wild (Music For The Motion Picture)",
-      "variations": [
-        "into the wild",
-        "into the wild (music for the motion picture)",
-        "music for the motion picture into the wild"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "III",
-      "variations": [
-        "iii (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "The Avalanches",
       "baseAlbumName": "Since I Left You",
       "variations": [
@@ -3225,20 +2562,6 @@
       ]
     },
     {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Abbey Road",
-      "variations": [
-        "abbey road (remastered)"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Revolver",
-      "variations": [
-        "revolver (remastered)"
-      ]
-    },
-    {
       "artistName": "JAY-Z",
       "baseAlbumName": "Watch The Throne",
       "variations": [
@@ -3255,108 +2578,11 @@
       ]
     },
     {
-      "artistName": "Frank Ocean",
-      "baseAlbumName": "Biking (Solo)",
-      "variations": [
-        "biking (solo)",
-        "biking"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "A Reality Tour (Live)",
-      "variations": [
-        "a reality tour (live)",
-        "a reality tour"
-      ]
-    },
-    {
       "artistName": "David Bowie",
       "baseAlbumName": "David Bowie (aka Space Oddity)",
       "variations": [
         "david bowie (aka space oddity) [2015 remaster]",
         "david bowie"
-      ]
-    },
-    {
-      "artistName": "David Bowie",
-      "baseAlbumName": "The Man Who Sold the World",
-      "variations": [
-        "the man who sold the world (2015 remaster)",
-        "the man who sold the world"
-      ]
-    },
-    {
-      "artistName": "Mac Miller",
-      "baseAlbumName": "Circles",
-      "variations": [
-        "circles",
-        "circles (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Mac Miller",
-      "baseAlbumName": "Watching Movies With The Sound Off (Deluxe Edition)",
-      "variations": [
-        "watching movies with the sound off (deluxe edition)",
-        "watching movies with the sound off"
-      ]
-    },
-    {
-      "artistName": "Kanye West",
-      "baseAlbumName": "Homecoming",
-      "variations": [
-        "homecoming",
-        "homecoming (int'l instant gratification track)"
-      ]
-    },
-    {
-      "artistName": "Nina Simone",
-      "baseAlbumName": "Pastel Blues (Originals)",
-      "variations": [
-        "pastel blues (originals)",
-        "pastel blues"
-      ]
-    },
-    {
-      "artistName": "Bon Iver",
-      "baseAlbumName": "Bon Iver",
-      "variations": [
-        "bon iver",
-        "bon iver (10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Basement",
-      "baseAlbumName": "Promise Everything (Deluxe)",
-      "variations": [
-        "promise everything (deluxe)",
-        "promise everything"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "III",
-      "variations": [
-        "iii (deluxe edition)",
-        "iii (instrumentals)",
-        "iii"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "II",
-      "variations": [
-        "ii",
-        "ii (10th anniversary sped-up edition)"
-      ]
-    },
-    {
-      "artistName": "Moderat",
-      "baseAlbumName": "Moderat",
-      "variations": [
-        "moderat",
-        "moderat (deluxe version)"
       ]
     },
     {
@@ -3378,450 +2604,6 @@
       ]
     },
     {
-      "artistName": "Kate Bush",
-      "baseAlbumName": "Aerial (2018 Remaster)",
-      "variations": [
-        "aerial (2018 remaster)",
-        "aerial"
-      ]
-    },
-    {
-      "artistName": "Kate Bush",
-      "baseAlbumName": "The Red Shoes",
-      "variations": [
-        "the red shoes",
-        "the red shoes (2018 remaster)"
-      ]
-    },
-    {
-      "artistName": "Metallica",
-      "baseAlbumName": "Kill 'Em All (Remastered)",
-      "variations": [
-        "kill 'em all (remastered)",
-        "kill 'em all"
-      ]
-    },
-    {
-      "artistName": "Metallica",
-      "baseAlbumName": "Master Of Puppets (Remastered)",
-      "variations": [
-        "master of puppets (remastered)",
-        "master of puppets"
-      ]
-    },
-    {
-      "artistName": "TV Girl",
-      "baseAlbumName": "Fauxllennium (Japanese Deluxe Edition)",
-      "variations": [
-        "fauxllennium (japanese deluxe edition)",
-        "fauxllennium"
-      ]
-    },
-    {
-      "artistName": "Fleetwood Mac",
-      "baseAlbumName": "Rumours",
-      "variations": [
-        "rumours",
-        "rumours (super deluxe)"
-      ]
-    },
-    {
-      "artistName": "Fleetwood Mac",
-      "baseAlbumName": "Fleetwood Mac",
-      "variations": [
-        "fleetwood mac",
-        "fleetwood mac (2017 remaster)"
-      ]
-    },
-    {
-      "artistName": "John Lennon",
-      "baseAlbumName": "Plastic Ono Band",
-      "variations": [
-        "plastic ono band",
-        "plastic ono band (the ultimate collection)"
-      ]
-    },
-    {
-      "artistName": "Tigers Jaw",
-      "baseAlbumName": "Belongs To The Dead (Remastered Version)",
-      "variations": [
-        "belongs to the dead (remastered version)",
-        "belongs to the dead"
-      ]
-    },
-    {
-      "artistName": "Pinegrove",
-      "baseAlbumName": "Marigold (Expanded Edition)",
-      "variations": [
-        "marigold (expanded edition)",
-        "marigold"
-      ]
-    },
-    {
-      "artistName": "Pinegrove",
-      "baseAlbumName": "Cardinal",
-      "variations": [
-        "cardinal",
-        "cardinal (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Big Thief",
-      "baseAlbumName": "Masterpiece (2023 Remaster)",
-      "variations": [
-        "masterpiece (2023 remaster)",
-        "masterpiece"
-      ]
-    },
-    {
-      "artistName": "Post Malone",
-      "baseAlbumName": "Stoney",
-      "variations": [
-        "stoney",
-        "stoney (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "No Control",
-      "variations": [
-        "no control",
-        "no control (re-issue)"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "How Could Hell Be Any Worse? (2005 Remaster)",
-      "variations": [
-        "how could hell be any worse? (2005 remaster)",
-        "how could hell be any worse? (re-issue)"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "Against The Grain (Reissue)",
-      "variations": [
-        "against the grain (reissue)",
-        "against the grain"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "New Maps of Hell Deluxe Version",
-      "variations": [
-        "new maps of hell deluxe version",
-        "new maps of hell (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Bad Religion",
-      "baseAlbumName": "Tested (Live)",
-      "variations": [
-        "tested (live)",
-        "tested"
-      ]
-    },
-    {
-      "artistName": "Turnover",
-      "baseAlbumName": "Peripheral Vision",
-      "variations": [
-        "peripheral vision",
-        "peripheral vision (10 year anniversary deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Oslo Ess",
-      "baseAlbumName": "Verden På Nakken, Venner I Ryggen",
-      "variations": [
-        "verden på nakken, venner i ryggen",
-        "verden på nakken, venner i ryggen (spotify exclusive bonus track)"
-      ]
-    },
-    {
-      "artistName": "Sufjan Stevens",
-      "baseAlbumName": "Carrie & Lowell",
-      "variations": [
-        "carrie & lowell",
-        "carrie & lowell (10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Marvin Gaye",
-      "baseAlbumName": "What's Going On",
-      "variations": [
-        "what's going on",
-        "what's going on (remastered w/bonus tracks)"
-      ]
-    },
-    {
-      "artistName": "Shawn Mendes",
-      "baseAlbumName": "Shawn Mendes",
-      "variations": [
-        "shawn mendes",
-        "shawn mendes (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Shawn Mendes",
-      "baseAlbumName": "Illuminate (Deluxe)",
-      "variations": [
-        "illuminate (deluxe)",
-        "illuminate"
-      ]
-    },
-    {
-      "artistName": "Shawn Mendes",
-      "baseAlbumName": "Handwritten",
-      "variations": [
-        "handwritten",
-        "handwritten (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Elliott Smith",
-      "baseAlbumName": "Either/Or",
-      "variations": [
-        "either/or",
-        "either/or (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Fontaines D.C.",
-      "baseAlbumName": "Romance",
-      "variations": [
-        "romance",
-        "romance (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "The Beach Boys",
-      "baseAlbumName": "Pet Sounds (Original Mono & Stereo Mix)",
-      "variations": [
-        "pet sounds (original mono & stereo mix)",
-        "pet sounds",
-        "pet sounds (mono)"
-      ]
-    },
-    {
-      "artistName": "Rancid",
-      "baseAlbumName": "Indestructible",
-      "variations": [
-        "indestructible",
-        "indestructible (limited edition-pa version)"
-      ]
-    },
-    {
-      "artistName": "Rancid",
-      "baseAlbumName": "Let The Dominoes Fall [Expanded Version]",
-      "variations": [
-        "let the dominoes fall [expanded version]",
-        "let the dominoes fall (expanded version)"
-      ]
-    },
-    {
-      "artistName": "Talking Heads",
-      "baseAlbumName": "Speaking in Tongues (Deluxe Version)",
-      "variations": [
-        "speaking in tongues (deluxe version)",
-        "speaking in tongues"
-      ]
-    },
-    {
-      "artistName": "Oasis",
-      "baseAlbumName": "Be Here Now (Deluxe Remastered Edition)",
-      "variations": [
-        "be here now (deluxe remastered edition)",
-        "be here now"
-      ]
-    },
-    {
-      "artistName": "Architects",
-      "baseAlbumName": "Daybreaker (Deluxe Edition)",
-      "variations": [
-        "daybreaker (deluxe edition)",
-        "daybreaker"
-      ]
-    },
-    {
-      "artistName": "The Cure",
-      "baseAlbumName": "The Head On The Door (Remastered)",
-      "variations": [
-        "the head on the door (remastered)",
-        "the head on the door"
-      ]
-    },
-    {
-      "artistName": "Spotify",
-      "baseAlbumName": "Blissed Out (160)",
-      "variations": [
-        "blissed out (160)",
-        "blissed out (150)"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "The Beatles",
-      "variations": [
-        "the beatles (remastered)",
-        "the beatles"
-      ]
-    },
-    {
-      "artistName": "The Beatles",
-      "baseAlbumName": "Revolver",
-      "variations": [
-        "revolver (remastered)",
-        "revolver (super deluxe)"
-      ]
-    },
-    {
-      "artistName": "Red Hot Chili Peppers",
-      "baseAlbumName": "Stadium Arcadium",
-      "variations": [
-        "stadium arcadium",
-        "stadium arcadium (walmart.com exclusive)"
-      ]
-    },
-    {
-      "artistName": "Red Hot Chili Peppers",
-      "baseAlbumName": "Blood Sugar Sex Magik (Deluxe Edition)",
-      "variations": [
-        "blood sugar sex magik (deluxe edition)",
-        "blood sugar sex magik"
-      ]
-    },
-    {
-      "artistName": "Red Hot Chili Peppers",
-      "baseAlbumName": "Californication (Deluxe Edition)",
-      "variations": [
-        "californication (deluxe edition)",
-        "californication"
-      ]
-    },
-    {
-      "artistName": "Red Hot Chili Peppers",
-      "baseAlbumName": "By the Way (Deluxe Edition)",
-      "variations": [
-        "by the way (deluxe edition)",
-        "by the way"
-      ]
-    },
-    {
-      "artistName": "Joy Division",
-      "baseAlbumName": "Unknown Pleasures (Collector's Edition)",
-      "variations": [
-        "unknown pleasures (collector's edition)",
-        "unknown pleasures"
-      ]
-    },
-    {
-      "artistName": "Foo Fighters",
-      "baseAlbumName": "One By One (Expanded Edition)",
-      "variations": [
-        "one by one (expanded edition)",
-        "one by one"
-      ]
-    },
-    {
-      "artistName": "Kid Cudi",
-      "baseAlbumName": "Man On The Moon: The End Of Day (Int'l Version)",
-      "variations": [
-        "man on the moon: the end of day (int'l version)",
-        "man on the moon: the end of day"
-      ]
-    },
-    {
-      "artistName": "American Football",
-      "baseAlbumName": "American Football",
-      "variations": [
-        "american football",
-        "american football (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Childish Gambino",
-      "baseAlbumName": "Camp (Deluxe Edition)",
-      "variations": [
-        "camp (deluxe edition)",
-        "camp"
-      ]
-    },
-    {
-      "artistName": "The Smiths",
-      "baseAlbumName": "The Sound of the Smiths (Deluxe; 2008 Remaster)",
-      "variations": [
-        "the sound of the smiths (deluxe; 2008 remaster)",
-        "the sound of the smiths (standard digital version)",
-        "the sound of the smiths"
-      ]
-    },
-    {
-      "artistName": "The Smiths",
-      "baseAlbumName": "The Queen Is Dead",
-      "variations": [
-        "the queen is dead",
-        "the queen is dead (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "The Rolling Stones",
-      "baseAlbumName": "Exile On Main Street (Deluxe Version)",
-      "variations": [
-        "exile on main street (deluxe version)",
-        "exile on main street (2010 re-mastered)"
-      ]
-    },
-    {
-      "artistName": "Jokke med Tourettes",
-      "baseAlbumName": "Billig Lykke",
-      "variations": [
-        "billig lykke",
-        "billig lykke (re-mastret)"
-      ]
-    },
-    {
-      "artistName": "Black Sabbath",
-      "baseAlbumName": "Sabbath Bloody Sabbath (2009 Remastered Version)",
-      "variations": [
-        "sabbath bloody sabbath (2009 remastered version)",
-        "sabbath bloody sabbath (remastered)"
-      ]
-    },
-    {
-      "artistName": "Black Sabbath",
-      "baseAlbumName": "Vol. 4 (2009 Remastered Version)",
-      "variations": [
-        "vol. 4 (2009 remastered version)",
-        "vol. 4"
-      ]
-    },
-    {
-      "artistName": "Black Sabbath",
-      "baseAlbumName": "Paranoid (2009 Remastered Version)",
-      "variations": [
-        "paranoid (2009 remastered version)",
-        "paranoid"
-      ]
-    },
-    {
-      "artistName": "Black Sabbath",
-      "baseAlbumName": "Master of Reality (2009 Remastered Version)",
-      "variations": [
-        "master of reality (2009 remastered version)",
-        "master of reality",
-        "master of reality (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Black Sabbath",
-      "baseAlbumName": "Black Sabbath (2009 Remastered Version)",
-      "variations": [
-        "black sabbath (2009 remastered version)",
-        "black sabbath",
-        "black sabbath (deluxe edition)"
-      ]
-    },
-    {
       "artistName": "Nirvana",
       "baseAlbumName": "In Utero",
       "variations": [
@@ -3831,235 +2613,6 @@
         "in utero - 20th anniversary - deluxe edition",
         "in utero - 20th anniversary super deluxe",
         "in utero - 20th anniversary remaster"
-      ]
-    },
-    {
-      "artistName": "Nirvana",
-      "baseAlbumName": "MTV Unplugged In New York (25th Anniversary)",
-      "variations": [
-        "mtv unplugged in new york (25th anniversary)",
-        "mtv unplugged in new york"
-      ]
-    },
-    {
-      "artistName": "Nirvana",
-      "baseAlbumName": "Nevermind (Remastered)",
-      "variations": [
-        "nevermind (remastered)",
-        "nevermind",
-        "nevermind (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "The Lumineers",
-      "baseAlbumName": "Cleopatra",
-      "variations": [
-        "cleopatra",
-        "cleopatra (deluxe)"
-      ]
-    },
-    {
-      "artistName": "The Lumineers",
-      "baseAlbumName": "The Lumineers",
-      "variations": [
-        "the lumineers",
-        "the lumineers (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Nick Cave & The Bad Seeds",
-      "baseAlbumName": "Murder Ballads (Remastered)",
-      "variations": [
-        "murder ballads (remastered)",
-        "murder ballads (2011 remastered version)"
-      ]
-    },
-    {
-      "artistName": "Nick Cave & The Bad Seeds",
-      "baseAlbumName": "Push the Sky Away",
-      "variations": [
-        "push the sky away",
-        "push the sky away (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Pixies",
-      "baseAlbumName": "Surfer Rosa (Remastered)",
-      "variations": [
-        "surfer rosa (remastered)",
-        "surfer rosa"
-      ]
-    },
-    {
-      "artistName": "Pink Floyd",
-      "baseAlbumName": "The Wall (Remastered)",
-      "variations": [
-        "the wall (remastered)",
-        "the wall [2011 - remaster] (2011 remastered version)"
-      ]
-    },
-    {
-      "artistName": "Drake",
-      "baseAlbumName": "Nothing Was The Same (Deluxe)",
-      "variations": [
-        "nothing was the same (deluxe)",
-        "nothing was the same"
-      ]
-    },
-    {
-      "artistName": "The Smashing Pumpkins",
-      "baseAlbumName": "Mellon Collie And The Infinite Sadness (Remastered)",
-      "variations": [
-        "mellon collie and the infinite sadness (remastered)",
-        "mellon collie and the infinite sadness (deluxe edition)",
-        "mellon collie and the infinite sadness"
-      ]
-    },
-    {
-      "artistName": "The Smashing Pumpkins",
-      "baseAlbumName": "Siamese Dream (2011 - Remaster)",
-      "variations": [
-        "siamese dream (2011 - remaster)",
-        "siamese dream (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Vince Guaraldi Trio",
-      "baseAlbumName": "A Charlie Brown Christmas [2012 Remastered & Expanded Edition]",
-      "variations": [
-        "a charlie brown christmas [2012 remastered & expanded edition]",
-        "a charlie brown christmas (remastered & expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Black Lips",
-      "baseAlbumName": "Underneath the Rainbow (Bonus Track Version)",
-      "variations": [
-        "underneath the rainbow (bonus track version)",
-        "underneath the rainbow"
-      ]
-    },
-    {
-      "artistName": "Green Day",
-      "baseAlbumName": "American Idiot",
-      "variations": [
-        "american idiot",
-        "american idiot (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Beastie Boys",
-      "baseAlbumName": "Paul's Boutique",
-      "variations": [
-        "paul's boutique",
-        "paul's boutique (20th anniversary edition / remastered)"
-      ]
-    },
-    {
-      "artistName": "Jimmy Eat World",
-      "baseAlbumName": "Bleed American (Deluxe Edition)",
-      "variations": [
-        "bleed american (deluxe edition)",
-        "bleed american"
-      ]
-    },
-    {
-      "artistName": "Jimmy Eat World",
-      "baseAlbumName": "Futures",
-      "variations": [
-        "futures",
-        "futures (international version)"
-      ]
-    },
-    {
-      "artistName": "Tom Waits",
-      "baseAlbumName": "Blue Valentine (Remastered)",
-      "variations": [
-        "blue valentine (remastered)",
-        "blue valentine"
-      ]
-    },
-    {
-      "artistName": "Tom Waits",
-      "baseAlbumName": "Foreign Affairs",
-      "variations": [
-        "foreign affairs",
-        "foreign affairs (remastered)"
-      ]
-    },
-    {
-      "artistName": "Tom Waits",
-      "baseAlbumName": "Closing Time",
-      "variations": [
-        "closing time",
-        "closing time (remastered)"
-      ]
-    },
-    {
-      "artistName": "The Jesus and Mary Chain",
-      "baseAlbumName": "Psychocandy (Expanded Version)",
-      "variations": [
-        "psychocandy (expanded version)",
-        "psychocandy"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Led Zeppelin",
-      "variations": [
-        "led zeppelin",
-        "led zeppelin (remaster)",
-        "led zeppelin (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Led Zeppelin II (1994 Remaster)",
-      "variations": [
-        "led zeppelin ii (1994 remaster)",
-        "led zeppelin ii (remaster)"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Led Zeppelin IV (Remaster)",
-      "variations": [
-        "led zeppelin iv (remaster)",
-        "led zeppelin iv (deluxe edition)",
-        "led zeppelin iv"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Physical Graffiti (1994 Remaster)",
-      "variations": [
-        "physical graffiti (1994 remaster)",
-        "physical graffiti (deluxe edition)",
-        "physical graffiti (remaster)"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Led Zeppelin III (Remaster)",
-      "variations": [
-        "led zeppelin iii (remaster)",
-        "led zeppelin iii (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Led Zeppelin",
-      "baseAlbumName": "Houses of the Holy (Remaster)",
-      "variations": [
-        "houses of the holy (remaster)",
-        "houses of the holy (1994 remaster)"
-      ]
-    },
-    {
-      "artistName": "Lana Del Rey",
-      "baseAlbumName": "Ultraviolence (Deluxe)",
-      "variations": [
-        "ultraviolence (deluxe)",
-        "ultraviolence"
       ]
     },
     {
@@ -4088,584 +2641,11 @@
       ]
     },
     {
-      "artistName": "Nick Mulvey",
-      "baseAlbumName": "First Mind",
-      "variations": [
-        "first mind",
-        "first mind (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Nick Mulvey",
-      "baseAlbumName": "Wake Up Now",
-      "variations": [
-        "wake up now",
-        "wake up now (unplugged)"
-      ]
-    },
-    {
-      "artistName": "Flipsyde",
-      "baseAlbumName": "We The People",
-      "variations": [
-        "we the people",
-        "we the people (international version)"
-      ]
-    },
-    {
-      "artistName": "Michael Kiwanuka",
-      "baseAlbumName": "Home Again (Deluxe Version)",
-      "variations": [
-        "home again (deluxe version)",
-        "home again"
-      ]
-    },
-    {
-      "artistName": "In Flames",
-      "baseAlbumName": "Clayman (Reissue 2014)",
-      "variations": [
-        "clayman (reissue 2014)",
-        "clayman (re-issue 2014)",
-        "clayman",
-        "clayman (20th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "In Flames",
-      "baseAlbumName": "A Sense Of Purpose",
-      "variations": [
-        "a sense of purpose",
-        "a sense of purpose (re-issue 2014)"
-      ]
-    },
-    {
-      "artistName": "In Flames",
-      "baseAlbumName": "Reroute to Remain (Reissue 2014)",
-      "variations": [
-        "reroute to remain (reissue 2014)",
-        "reroute to remain",
-        "reroute to remain (re-issue 2014)"
-      ]
-    },
-    {
-      "artistName": "Stevie Wonder",
-      "baseAlbumName": "Songs In The Key Of Life (Reissue)",
-      "variations": [
-        "songs in the key of life (reissue)",
-        "songs in the key of life"
-      ]
-    },
-    {
-      "artistName": "Stevie Wonder",
-      "baseAlbumName": "Innervisions",
-      "variations": [
-        "innervisions",
-        "innervisions (reissue)"
-      ]
-    },
-    {
-      "artistName": "The Postal Service",
-      "baseAlbumName": "Give Up",
-      "variations": [
-        "give up",
-        "give up (deluxe 10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Sonic Youth",
-      "baseAlbumName": "Daydream Nation (Deluxe Edition)",
-      "variations": [
-        "daydream nation (deluxe edition)",
-        "daydream nation (remastered original album)"
-      ]
-    },
-    {
-      "artistName": "Sonic Youth",
-      "baseAlbumName": "Confusion Is Sex (Plus Kill Yr. Idols)",
-      "variations": [
-        "confusion is sex (plus kill yr. idols)",
-        "confusion is sex"
-      ]
-    },
-    {
-      "artistName": "Vance Joy",
-      "baseAlbumName": "Dream Your Life Away",
-      "variations": [
-        "dream your life away",
-        "dream your life away (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "blink-182",
-      "baseAlbumName": "blink-182",
-      "variations": [
-        "blink-182",
-        "blink-182 (international version)"
-      ]
-    },
-    {
-      "artistName": "Dumdum Boys",
-      "baseAlbumName": "Blodig Alvor Na Na Na Na Na (Remastered 2015)",
-      "variations": [
-        "blodig alvor na na na na na (remastered 2015)",
-        "blodig alvor na na na na na"
-      ]
-    },
-    {
-      "artistName": "Dumdum Boys",
-      "baseAlbumName": "Gravitasjon",
-      "variations": [
-        "gravitasjon",
-        "gravitasjon (remastered 2015)"
-      ]
-    },
-    {
-      "artistName": "Dumdum Boys",
-      "baseAlbumName": "Splitter Pine (Remastered 2015)",
-      "variations": [
-        "splitter pine (remastered 2015)",
-        "splitter pine"
-      ]
-    },
-    {
-      "artistName": "Jimmy Cliff",
-      "baseAlbumName": "The Harder They Come (Remastered)",
-      "variations": [
-        "the harder they come (remastered)",
-        "the harder they come (original motion picture soundtrack)"
-      ]
-    },
-    {
-      "artistName": "deLillos",
-      "baseAlbumName": "Neste sommer (Jubileumsutgave) [Remastered]",
-      "variations": [
-        "neste sommer (jubileumsutgave) [remastered]",
-        "neste sommer"
-      ]
-    },
-    {
-      "artistName": "Neil Young",
-      "baseAlbumName": "Harvest",
-      "variations": [
-        "harvest",
-        "harvest (50th anniversary edition)",
-        "harvest (2009 remaster)"
-      ]
-    },
-    {
-      "artistName": "Eminem",
-      "baseAlbumName": "The Marshall Mathers LP",
-      "variations": [
-        "the marshall mathers lp",
-        "the marshall mathers lp (25th anniversary)"
-      ]
-    },
-    {
-      "artistName": "Eminem",
-      "baseAlbumName": "The Slim Shady LP",
-      "variations": [
-        "the slim shady lp",
-        "the slim shady lp (explicit)"
-      ]
-    },
-    {
-      "artistName": "Junior Varsity",
-      "baseAlbumName": "My Star (Deluxe)",
-      "variations": [
-        "my star (deluxe)",
-        "my star"
-      ]
-    },
-    {
-      "artistName": "Linkin Park",
-      "baseAlbumName": "A Thousand Suns (Bonus Edition)",
-      "variations": [
-        "a thousand suns (bonus edition)",
-        "a thousand suns"
-      ]
-    },
-    {
-      "artistName": "alt-J",
-      "baseAlbumName": "An Awesome Wave",
-      "variations": [
-        "an awesome wave",
-        "an awesome wave (deluxe version)"
-      ]
-    },
-    {
-      "artistName": "Motörhead",
-      "baseAlbumName": "Overkill (Deluxe Edition)",
-      "variations": [
-        "overkill (deluxe edition)",
-        "overkill (expanded bonus track edition)",
-        "overkill (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "The Maccabees",
-      "baseAlbumName": "Wall Of Arms",
-      "variations": [
-        "wall of arms",
-        "wall of arms (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "George Harrison",
-      "baseAlbumName": "All Things Must Pass (Remastered 2014)",
-      "variations": [
-        "all things must pass (remastered 2014)",
-        "all things must pass (2014 remaster)"
-      ]
-    },
-    {
-      "artistName": "Dr. Dre",
-      "baseAlbumName": "2001 (Explicit Version)",
-      "variations": [
-        "2001 (explicit version)",
-        "2001"
-      ]
-    },
-    {
-      "artistName": "Limp Bizkit",
-      "baseAlbumName": "Significant Other (Explicit)",
-      "variations": [
-        "significant other (explicit)",
-        "significant other"
-      ]
-    },
-    {
-      "artistName": "Creedence Clearwater Revival",
-      "baseAlbumName": "Cosmo's Factory (40th Anniversary Edition)",
-      "variations": [
-        "cosmo's factory (40th anniversary edition)",
-        "cosmo's factory (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Cocteau Twins",
-      "baseAlbumName": "Heaven or Las Vegas",
-      "variations": [
-        "heaven or las vegas",
-        "heaven or las vegas (remastered)"
-      ]
-    },
-    {
-      "artistName": "Alice In Chains",
-      "baseAlbumName": "Dirt (2022 Remaster)",
-      "variations": [
-        "dirt (2022 remaster)",
-        "dirt"
-      ]
-    },
-    {
-      "artistName": "Turbowolf",
-      "baseAlbumName": "Turbowolf",
-      "variations": [
-        "turbowolf",
-        "turbowolf (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Iron Maiden",
-      "baseAlbumName": "The Number of the Beast (2015 Remaster)",
-      "variations": [
-        "the number of the beast (2015 remaster)",
-        "the number of the beast (1998 remastered edition)"
-      ]
-    },
-    {
-      "artistName": "Iron Maiden",
-      "baseAlbumName": "Piece of Mind (2015 Remaster)",
-      "variations": [
-        "piece of mind (2015 remaster)",
-        "piece of mind (1998 remastered edition)"
-      ]
-    },
-    {
-      "artistName": "Iron Maiden",
-      "baseAlbumName": "Powerslave (2015 Remaster)",
-      "variations": [
-        "powerslave (2015 remaster)",
-        "powerslave (1998 remastered edition)"
-      ]
-    },
-    {
-      "artistName": "Queen",
-      "baseAlbumName": "A Night At The Opera (2011 Remaster)",
-      "variations": [
-        "a night at the opera (2011 remaster)",
-        "a night at the opera (deluxe edition 2011 remaster)"
-      ]
-    },
-    {
-      "artistName": "The Notorious B.I.G.",
-      "baseAlbumName": "Life After Death (Deluxe Version)",
-      "variations": [
-        "life after death (deluxe version)",
-        "life after death (2014 remastered edition)"
-      ]
-    },
-    {
-      "artistName": "Jamie xx",
-      "baseAlbumName": "In Waves (Deluxe)",
-      "variations": [
-        "in waves (deluxe)",
-        "in waves"
-      ]
-    },
-    {
-      "artistName": "David Byrne",
-      "baseAlbumName": "Everything That Happens Will Happen Today",
-      "variations": [
-        "everything that happens will happen today",
-        "everything that happens will happen today (deluxe)"
-      ]
-    },
-    {
-      "artistName": "Klangkarussell",
-      "baseAlbumName": "Netzwerk (Falls Like Rain)",
-      "variations": [
-        "netzwerk (falls like rain)",
-        "netzwerk"
-      ]
-    },
-    {
-      "artistName": "Operation Ivy",
-      "baseAlbumName": "Operation Ivy",
-      "variations": [
-        "operation ivy",
-        "operation ivy (2007 remaster)"
-      ]
-    },
-    {
-      "artistName": "Jeff Buckley",
-      "baseAlbumName": "Grace",
-      "variations": [
-        "grace",
-        "grace (legacy edition)"
-      ]
-    },
-    {
-      "artistName": "Slow Pulp",
-      "baseAlbumName": "Moveys",
-      "variations": [
-        "moveys",
-        "moveys (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Disclosure",
-      "baseAlbumName": "Settle (Special Edition)",
-      "variations": [
-        "settle (special edition)",
-        "settle (deluxe version)"
-      ]
-    },
-    {
-      "artistName": "Yeah Yeah Yeahs",
-      "baseAlbumName": "Fever To Tell",
-      "variations": [
-        "fever to tell",
-        "fever to tell (deluxe remastered)"
-      ]
-    },
-    {
       "artistName": "Ramones",
       "baseAlbumName": "Ramones (Expanded)",
       "variations": [
         "ramones (expanded)",
         "ramones (40th anniversary deluxe edition; 2016 remaster)"
-      ]
-    },
-    {
-      "artistName": "Unknown Mortal Orchestra",
-      "baseAlbumName": "II",
-      "variations": [
-        "ii",
-        "ii (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Everyone Everywhere",
-      "baseAlbumName": "Everyone Everywhere (2012)",
-      "variations": [
-        "everyone everywhere (2012)",
-        "everyone everywhere"
-      ]
-    },
-    {
-      "artistName": "Dead Kennedys",
-      "baseAlbumName": "Fresh Fruit for Rotting Vegetables",
-      "variations": [
-        "fresh fruit for rotting vegetables",
-        "fresh fruit for rotting vegetables (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Judas Priest",
-      "baseAlbumName": "Screaming For Vengeance",
-      "variations": [
-        "screaming for vengeance",
-        "screaming for vengeance (expanded edition)"
-      ]
-    },
-    {
-      "artistName": "Refused",
-      "baseAlbumName": "The Shape Of Punk To Come [Deluxe Version]",
-      "variations": [
-        "the shape of punk to come [deluxe version]",
-        "the shape of punk to come (deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "The Band",
-      "baseAlbumName": "Music From Big Pink (Expanded Edition)",
-      "variations": [
-        "music from big pink (expanded edition)",
-        "music from big pink (remastered)"
-      ]
-    },
-    {
-      "artistName": "Rise Against",
-      "baseAlbumName": "Appeal To Reason",
-      "variations": [
-        "appeal to reason",
-        "appeal to reason (international version)"
-      ]
-    },
-    {
-      "artistName": "Major Lazer",
-      "baseAlbumName": "Free The Universe Deluxe",
-      "variations": [
-        "free the universe deluxe",
-        "free the universe"
-      ]
-    },
-    {
-      "artistName": "Elton John",
-      "baseAlbumName": "Goodbye Yellow Brick Road (Remastered)",
-      "variations": [
-        "goodbye yellow brick road (remastered)",
-        "goodbye yellow brick road (remastered / deluxe edition)"
-      ]
-    },
-    {
-      "artistName": "Elton John",
-      "baseAlbumName": "Too Low For Zero",
-      "variations": [
-        "too low for zero",
-        "too low for zero (remastered with bonus tracks)"
-      ]
-    },
-    {
-      "artistName": "R.E.M.",
-      "baseAlbumName": "Out Of Time (U.S. Version)",
-      "variations": [
-        "out of time (u.s. version)",
-        "out of time (25th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Gold Panda",
-      "baseAlbumName": "Lucky Shiner (Deluxe Edition)",
-      "variations": [
-        "lucky shiner (deluxe edition)",
-        "lucky shiner"
-      ]
-    },
-    {
-      "artistName": "Disturbed",
-      "baseAlbumName": "The Sickness",
-      "variations": [
-        "the sickness",
-        "the sickness (10th anniversary edition)"
-      ]
-    },
-    {
-      "artistName": "Arcade Fire",
-      "baseAlbumName": "The Suburbs (Deluxe)",
-      "variations": [
-        "the suburbs (deluxe)",
-        "the suburbs"
-      ]
-    },
-    {
-      "artistName": "Imagine Dragons",
-      "baseAlbumName": "Night Visions (Deluxe)",
-      "variations": [
-        "night visions (deluxe)",
-        "night visions"
-      ]
-    },
-    {
-      "artistName": "City and Colour",
-      "baseAlbumName": "Bring Me Your Love",
-      "variations": [
-        "bring me your love",
-        "bring me your love (special edition)"
-      ]
-    },
-    {
-      "artistName": "Royel Otis",
-      "baseAlbumName": "PRATTS & PAIN",
-      "variations": [
-        "pratts & pain",
-        "pratts & pain (it ain't over til it ends edition)"
-      ]
-    },
-    {
-      "artistName": "Lagwagon",
-      "baseAlbumName": "Let's Talk About Feelings",
-      "variations": [
-        "let's talk about feelings",
-        "let's talk about feelings (reissue)"
-      ]
-    },
-    {
-      "artistName": "The Verve",
-      "baseAlbumName": "Urban Hymns (Remastered 2016)",
-      "variations": [
-        "urban hymns (remastered 2016)",
-        "urban hymns"
-      ]
-    },
-    {
-      "artistName": "Mercury Rev",
-      "baseAlbumName": "Deserter's Songs",
-      "variations": [
-        "deserter's songs",
-        "deserter's songs (remastered)"
-      ]
-    },
-    {
-      "artistName": "Razorlight",
-      "baseAlbumName": "Razorlight",
-      "variations": [
-        "razorlight",
-        "razorlight (edeluxe version)"
-      ]
-    },
-    {
-      "artistName": "Bryan Adams",
-      "baseAlbumName": "Spirit: Stallion Of The Cimarron (Soundtrack)",
-      "variations": [
-        "spirit: stallion of the cimarron (soundtrack)",
-        "spirit: stallion of the cimarron (music from the original motion picture)"
-      ]
-    },
-    {
-      "artistName": "AWOLNATION",
-      "baseAlbumName": "Megalithic Symphony (Deluxe Edition)",
-      "variations": [
-        "megalithic symphony (deluxe edition)",
-        "megalithic symphony (deluxe)"
-      ]
-    },
-    {
-      "artistName": "The Interrupters",
-      "baseAlbumName": "The Interrupters (Deluxe Edition)",
-      "variations": [
-        "the interrupters (deluxe edition)",
-        "the interrupters"
       ]
     },
     {
