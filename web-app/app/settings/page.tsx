@@ -109,6 +109,7 @@ export default function SettingsPage() {
   const [expandedArtists, setExpandedArtists] = useState<Set<string>>(new Set())
   const [rulesSearch, setRulesSearch] = useState('')
   const [minTotalPlaysFilter, setMinTotalPlaysFilter] = useState<string>('')
+  const [spotifyAuthSubmitting, setSpotifyAuthSubmitting] = useState(false)
   const [mergeIntoTarget, setMergeIntoTarget] = useState<{
     artistName: string
     baseDisplayName: string
@@ -645,20 +646,86 @@ export default function SettingsPage() {
                   </ol>
                 </section>
 
-                <section>
+                <section className="space-y-3">
                   <h3 className="flex items-center gap-2 font-semibold text-sm mb-2">
                     <Key className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
                     3. Set up your Spotify Developer application
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="text-sm text-muted-foreground">
                     Create an app to get Client ID, Client Secret, and a refresh token for sync and metadata.
                   </p>
                   <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-1">
                     <li>Create an app at <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Spotify Developer Dashboard <ExternalLink className="w-3 h-3" /></a>.</li>
-                    <li>Note <strong>Client ID</strong> and <strong>Client Secret</strong>, and add this redirect URI in your app: <code className="text-foreground/80">http://127.0.0.1:3847/callback</code>.</li>
-                    <li>Get a refresh token: run <code className="text-foreground/80 bg-muted px-1 rounded">npm run setup-spotify-auth</code> in the project root. A browser tab opens—enter your Client ID and Client Secret there, then authorize with Spotify. Tokens are saved automatically.</li>
-                    <li>Use the printed values in the next step.</li>
+                    <li>Note <strong>Client ID</strong> and <strong>Client Secret</strong>. In your app, add this redirect URI: <code className="text-foreground/80">https://your-app.vercel.app/callback</code> (use your actual Vercel URL). For local dev use the same host as in your browser, e.g. <code className="text-foreground/80">http://127.0.0.1:3000/callback</code> or <code className="text-foreground/80">http://localhost:3000/callback</code>.</li>
+                    <li>Get a refresh token below: enter Client ID and Client Secret, click <strong>Authorize with Spotify</strong>. You will be sent to Spotify to authorize, then back here to copy the refresh token.</li>
+                    <li>Add the values to GitHub and Vercel in the next step.</li>
                   </ol>
+                  <form
+                    className="flex flex-col gap-3 max-w-sm mt-3 p-4 rounded-lg border border-border bg-muted/30"
+                    onSubmit={async (e) => {
+                      e.preventDefault()
+                      if (spotifyAuthSubmitting) return
+                      const form = e.currentTarget
+                      const clientId = (form.querySelector<HTMLInputElement>('[name="clientId"]')?.value ?? '').trim()
+                      const clientSecret = (form.querySelector<HTMLInputElement>('[name="clientSecret"]')?.value ?? '').trim()
+                      if (!clientId || !clientSecret) return
+                      setSpotifyAuthSubmitting(true)
+                      try {
+                        const res = await fetch('/api/spotify-auth/start', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ clientId, clientSecret }),
+                          redirect: 'manual',
+                        })
+                        if (res.status === 501) {
+                          const data = await res.json().catch(() => ({}))
+                          alert(data.error || 'Set SPOTIFY_OAUTH_STATE_SECRET in Vercel (or web-app/.env.local) to use in-app Spotify auth. Alternatively run npm run setup-spotify-auth locally.')
+                          return
+                        }
+                        if (res.status === 302) {
+                          const url = res.headers.get('Location')
+                          await res.text() // consume body so fetch completes before navigation (avoids "cancelled" in console)
+                          if (url) window.location.href = url
+                          return
+                        }
+                        const err = await res.json().catch(() => ({}))
+                        alert(err.error || 'Something went wrong. Try again.')
+                      } finally {
+                        setSpotifyAuthSubmitting(false)
+                      }
+                    }}
+                  >
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="font-medium">Client ID</span>
+                      <input
+                        name="clientId"
+                        type="text"
+                        placeholder="Your Client ID"
+                        className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="font-medium">Client Secret</span>
+                      <input
+                        name="clientSecret"
+                        type="password"
+                        placeholder="Your Client Secret"
+                        className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={spotifyAuthSubmitting}
+                      className="w-fit rounded-md bg-[#1DB954] px-4 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-70"
+                    >
+                      {spotifyAuthSubmitting ? 'Redirecting…' : 'Authorize with Spotify'}
+                    </button>
+                  </form>
+                  <p className="text-xs text-muted-foreground">
+                    Alternatively, run <code className="bg-muted px-1 rounded">npm run setup-spotify-auth</code> in the project root (redirect URI: <code className="bg-muted px-1 rounded">http://127.0.0.1:3847/callback</code>).
+                  </p>
                 </section>
 
                 <section className="space-y-4">
