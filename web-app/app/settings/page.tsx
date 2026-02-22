@@ -677,19 +677,17 @@ export default function SettingsPage() {
                           body: JSON.stringify({ clientId, clientSecret }),
                           redirect: 'manual',
                         })
+                        const data = await res.json().catch(() => ({}))
                         if (res.status === 501) {
-                          const data = await res.json().catch(() => ({}))
                           alert(data.error || 'Set SPOTIFY_OAUTH_STATE_SECRET in Vercel (or web-app/.env.local) to use in-app Spotify auth. Alternatively run npm run setup-spotify-auth locally.')
                           return
                         }
-                        if (res.status === 302) {
-                          const url = res.headers.get('Location')
-                          await res.text() // consume body so fetch completes before navigation (avoids "cancelled" in console)
-                          if (url) window.location.href = url
+                        if (res.ok && typeof data.redirectUrl === 'string') {
+                          window.location.href = data.redirectUrl
                           return
                         }
-                        const err = await res.json().catch(() => ({}))
-                        alert(err.error || 'Something went wrong. Try again.')
+                        const msg = data?.error || res.statusText || 'Something went wrong. Try again.' + (res.status ? ` (${res.status})` : '')
+                        alert(msg)
                       } finally {
                         setSpotifyAuthSubmitting(false)
                       }

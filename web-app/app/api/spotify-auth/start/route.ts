@@ -58,11 +58,10 @@ export async function POST(request: NextRequest) {
     const state = randomBytes(16).toString('hex')
     const payload = { state, clientId, clientSecret }
     const encrypted = encryptSpotifyOAuthPayload(payload)
+    const spotifyAuthUrl = buildSpotifyAuthUrl(clientId, redirectUri, state)
 
-    const response = NextResponse.redirect(
-      buildSpotifyAuthUrl(clientId, redirectUri, state),
-      302
-    )
+    // Return 200 with redirectUrl so the client can navigate (avoids 302 handling issues with fetch/CORS/proxies)
+    const response = NextResponse.json({ redirectUrl: spotifyAuthUrl })
     const isProd = process.env.NODE_ENV === 'production'
     response.cookies.set(SPOTIFY_OAUTH_COOKIE_NAME, encrypted, {
       httpOnly: true,
