@@ -3,10 +3,11 @@
 import { ReactNode, useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu } from 'lucide-react'
+import { Menu, Search, X } from 'lucide-react'
 import SpotifyStatsNav from './SpotifyStatsNav'
 import { Button } from './ui/button'
 import { Sheet, SheetContent } from './ui/sheet'
+import { useSpotifyStats } from './SpotifyStatsContext'
 
 type SpotifyStatsPage = 'albums' | 'songs' | 'artists' | 'stats' | 'genres' | 'settings'
 
@@ -28,6 +29,17 @@ export default function SpotifyStatsLayout({
   const [showSticky, setShowSticky] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const headerRef = useRef<HTMLDivElement>(null)
+  const { searchTerm, setSearchTerm } = useSpotifyStats()
+  const showSearchOnMobile = currentPage !== 'stats' && currentPage !== 'genres' && currentPage !== 'settings'
+
+  const getSearchPlaceholder = () => {
+    switch (currentPage) {
+      case 'songs': return 'Search songs, albums, or artists...'
+      case 'albums': return 'Search albums or artists...'
+      case 'artists': return 'Search artists...'
+      default: return 'Search...'
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,17 +100,10 @@ export default function SpotifyStatsLayout({
         >
           {/* Takes remaining height; only scrolls when content overflows */}
           <div className="flex-1 min-h-0 flex flex-col min-w-0 overflow-x-hidden overflow-y-auto w-full pt-6">
-            {/* Navigation + Search - centered in viewport */}
+            {/* Navigation only – search and filter/sort are in the top bar */}
             <div className="flex items-center justify-center min-w-0 w-full flex-shrink-0">
-              <SpotifyStatsNav currentPage={currentPage} largeLinks />
+              <SpotifyStatsNav currentPage={currentPage} largeLinks hideSearch />
             </div>
-
-            {/* Toggle and filter right under the search, centered in viewport */}
-            {additionalControls && (
-              <div className="flex flex-row flex-wrap items-center justify-center gap-2 min-w-0 w-full scale-110 origin-center mt-4 flex-shrink-0">
-                {additionalControls}
-              </div>
-            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -166,14 +171,43 @@ export default function SpotifyStatsLayout({
             {description}
           </p>
           
-          {/* Controls – hidden on mobile (nav/controls are in the sheet) */}
+          {/* Mobile: search + filter/sort below description */}
+          <div className="space-y-4 md:hidden mb-4">
+            {showSearchOnMobile && (
+              <div className="flex justify-center w-full">
+                <div className="relative w-full max-w-md mx-auto backdrop-blur-sm bg-card/40 border border-white/10 rounded-md p-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+                  <input
+                    type="text"
+                    placeholder={getSearchPlaceholder()}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md placeholder:text-muted-foreground"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {additionalControls && (
+              <div className="flex justify-center items-center flex-wrap gap-2">
+                {additionalControls}
+              </div>
+            )}
+          </div>
+          
+          {/* Desktop: nav + filter/sort */}
           <div className="space-y-4 hidden md:block">
-            {/* Navigation */}
             <div className="flex justify-center items-center">
               <SpotifyStatsNav currentPage={currentPage} />
             </div>
-            
-            {/* Additional Controls */}
             {additionalControls && (
               <div className="flex justify-center items-center">
                 {additionalControls}

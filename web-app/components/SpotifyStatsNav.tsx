@@ -11,9 +11,11 @@ interface SpotifyStatsNavProps {
   currentPage: SpotifyStatsPage
   compact?: boolean
   largeLinks?: boolean
+  /** When true, only nav links are shown (no search). Used in mobile sheet when search is in the top bar. */
+  hideSearch?: boolean
 }
 
-export default function SpotifyStatsNav({ currentPage, compact = false, largeLinks = false }: SpotifyStatsNavProps) {
+export default function SpotifyStatsNav({ currentPage, compact = false, largeLinks = false, hideSearch = false }: SpotifyStatsNavProps) {
   const { searchTerm, setSearchTerm } = useSpotifyStats()
   const showSearch = currentPage !== 'stats' && currentPage !== 'genres' && currentPage !== 'settings'
   const navRef = useRef<HTMLDivElement>(null)
@@ -201,7 +203,7 @@ export default function SpotifyStatsNav({ currentPage, compact = false, largeLin
           </div>
         </div>
         
-        {showSearch && (
+        {showSearch && !hideSearch && (
           <div className="flex justify-center w-full sm:w-auto min-w-0 px-0">
             <div ref={searchRef} className={`relative backdrop-blur-sm bg-card/40 border border-white/10 rounded-md min-w-0 ${largeLinks ? 'w-full' : 'w-full sm:w-auto'}`} style={!largeLinks && searchWidth ? { width: `${searchWidth}px` } : undefined}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10 flex-shrink-0" />
