@@ -8,14 +8,19 @@ import {
 export const SPOTIFY_OAUTH_COOKIE_NAME = 'spotify_oauth'
 
 /**
- * Build the redirect_uri used for Spotify OAuth. Pass request so that in local
- * dev we use the same host the user is browsing (e.g. 127.0.0.1 vs localhost).
+ * Build the redirect_uri used for Spotify OAuth. Uses the request Host when
+ * present (so custom domains like pulse.tordar.no work); otherwise VERCEL_URL
+ * or APP_URL. Protocol is https unless host is localhost/127.0.0.1.
  */
 export function getSpotifyCallbackRedirectUri(request?: { headers: { get(name: string): string | null } }): string {
+  const host = request?.headers?.get('host')?.trim()
+  if (host) {
+    const forwardedProto = request?.headers?.get('x-forwarded-proto')?.trim()
+    const proto = forwardedProto === 'https' ? 'https' : (/^localhost$|^127\.0\.0\.1$/i.test(host) ? 'http' : 'https')
+    return `${proto}://${host}/callback`
+  }
   const vercelUrl = process.env.VERCEL_URL?.trim()
   if (vercelUrl) return `https://${vercelUrl}/callback`
-  const host = request?.headers?.get('host')?.trim()
-  if (host) return `http://${host}/callback`
   return `${(process.env.APP_URL || 'http://localhost:3000').trim()}/callback`
 }
 
