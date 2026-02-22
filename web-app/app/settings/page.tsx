@@ -84,6 +84,8 @@ export default function SettingsPage() {
   const [recentTracksLoading, setRecentTracksLoading] = useState(true)
   const [recentTracksError, setRecentTracksError] = useState<string | null>(null)
   const [setupGuideOpen, setSetupGuideOpen] = useState(false)
+  const [uploadHistoryExpanded, setUploadHistoryExpanded] = useState(false)
+  const [rulesSectionExpanded, setRulesSectionExpanded] = useState(false)
 
   const [uploadSecret, setUploadSecret] = useState('')
   const [uploadFiles, setUploadFiles] = useState<File[]>([])
@@ -546,7 +548,7 @@ export default function SettingsPage() {
 
   const saveRules = async () => {
     if (!uploadSecret.trim()) {
-      setRulesSaveResult({ error: 'Enter your upload secret above.' })
+      setRulesSaveResult({ error: 'Enter your upload secret.' })
       return
     }
     setRulesSaveLoading(true)
@@ -715,15 +717,22 @@ export default function SettingsPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Upload streaming history
-            </CardTitle>
+          <CardHeader
+            className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-lg"
+            onClick={() => setUploadHistoryExpanded((e) => !e)}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload streaming history
+              </CardTitle>
+              {uploadHistoryExpanded ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            </div>
             <p className="text-sm text-muted-foreground">
               Add your <code className="text-foreground/80">Streaming_History_Audio_*.json</code> files here. They will be uploaded to your repo and the Merge Streaming History workflow will run automatically.
             </p>
           </CardHeader>
+          {uploadHistoryExpanded && (
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-2">
               <label htmlFor="upload-secret" className="text-sm font-medium">
@@ -820,19 +829,44 @@ export default function SettingsPage() {
               </div>
             )}
           </CardContent>
+          )}
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Album className="w-4 h-4" />
-              Album consolidation rules
-            </CardTitle>
+          <CardHeader
+            className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-lg"
+            onClick={() => setRulesSectionExpanded((e) => !e)}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Album className="w-4 h-4" />
+                Album consolidation rules
+              </CardTitle>
+              {rulesSectionExpanded ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            </div>
             <p className="text-sm text-muted-foreground">
-              You choose what to merge: different spellings of the same album (e.g. deluxe, remastered) can be consolidated so you get a clearer picture of how much an album has actually been listened to. We already merge variations that only differ by casing or punctuation (e.g. different licenses or “Album” vs “album”) without rules. Here you add rules for other variations you want combined. Save writes <code className="text-foreground/80">album-consolidation-rules.json</code> to your repo; use the upload secret above to save.
+              You choose what to merge: different spellings of the same album (e.g. deluxe, remastered) can be consolidated so you get a clearer picture of how much an album has actually been listened to. We already merge variations that only differ by casing or punctuation (e.g. different licenses or “Album” vs “album”) without rules. Here you add rules for other variations you want combined. Enter your upload secret below to save.
             </p>
           </CardHeader>
+          {rulesSectionExpanded && (
           <CardContent className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="rules-upload-secret" className="text-sm font-medium">
+                Upload secret
+              </label>
+              <input
+                id="rules-upload-secret"
+                type="password"
+                value={uploadSecret}
+                onChange={(e) => {
+                  setUploadSecret(e.target.value)
+                  setRulesSaveResult(null)
+                }}
+                placeholder="Upload secret"
+                className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                autoComplete="off"
+              />
+            </div>
             {rulesLoading && variationsLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -847,7 +881,7 @@ export default function SettingsPage() {
                 )}
                 {!variationsLoading && artistNames.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Showing artists with at least 2 different albums played (or with existing rules).
+                    Showing artists with at least 2 different albums played.
                   </p>
                 )}
                 <div className="flex flex-wrap items-end gap-4">
@@ -1254,6 +1288,7 @@ export default function SettingsPage() {
               </>
             )}
           </CardContent>
+          )}
         </Card>
 
         <Card>
