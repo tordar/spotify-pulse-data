@@ -2,7 +2,7 @@
   "metadata": {
     "totalArtists": 2185,
     "minPlayCount": 10,
-    "timestamp": "2026-02-22T14:27:59.132Z",
+    "timestamp": "2026-02-22T14:54:53.851Z",
     "source": "Merged Streaming History"
   },
   "artists": [
@@ -6691,7 +6691,8 @@
       "genres": [
         "norsk rock",
         "stoner rock",
-        "stoner metal"
+        "stoner metal",
+        "space rock"
       ]
     },
     {
@@ -8430,8 +8431,7 @@
         "psychobilly",
         "horror punk",
         "rockabilly",
-        "deathrock",
-        "gothic rock"
+        "deathrock"
       ]
     },
     {
@@ -10149,7 +10149,8 @@
       "genres": [
         "country",
         "country christian",
-        "classic country"
+        "classic country",
+        "traditional country"
       ]
     },
     {
