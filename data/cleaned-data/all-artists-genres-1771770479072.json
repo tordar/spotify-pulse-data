@@ -2,7 +2,7 @@
   "metadata": {
     "totalArtists": 2185,
     "minPlayCount": 10,
-    "timestamp": "2026-02-22T12:50:46.183Z",
+    "timestamp": "2026-02-22T14:27:59.132Z",
     "source": "Merged Streaming History"
   },
   "artists": [
@@ -5031,7 +5031,8 @@
       "name": "No Age",
       "play_count": 54,
       "genres": [
-        "noise rock"
+        "noise rock",
+        "garage rock"
       ]
     },
     {
@@ -8677,7 +8678,6 @@
       "name": "Toys That Kill",
       "play_count": 27,
       "genres": [
-        "egg punk",
         "punk"
       ]
     },
@@ -9059,8 +9059,8 @@
       "genres": [
         "j-pop",
         "j-rock",
-        "japanese indie",
-        "anime"
+        "anime",
+        "japanese indie"
       ]
     },
     {
@@ -14541,8 +14541,7 @@
         "industrial metal",
         "industrial rock",
         "ebm",
-        "darkwave",
-        "nu metal"
+        "darkwave"
       ]
     },
     {
@@ -15310,8 +15309,7 @@
       "play_count": 11,
       "genres": [
         "anti-folk",
-        "folk punk",
-        "experimental hip hop"
+        "folk punk"
       ]
     },
     {
@@ -16681,8 +16679,8 @@
       "name": "Lali Puna",
       "play_count": 10,
       "genres": [
-        "indie electronic",
         "electropop",
+        "indie electronic",
         "idm"
       ]
     },
