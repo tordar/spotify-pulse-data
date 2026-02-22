@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SpotifyStatsLayout from '@/components/SpotifyStatsLayout'
 import { Clock, CheckCircle2, XCircle, Loader2, ExternalLink, Music2, Trash2, FileJson, Key, Github, Zap, Cloud, ChevronDown, ChevronUp, Upload, Album, Save, Minus } from 'lucide-react'
@@ -98,6 +98,7 @@ export default function SettingsPage() {
   const [dragOver, setDragOver] = useState(false)
 
   const [rules, setRules] = useState<ConsolidationRule[]>([])
+  const [initialRules, setInitialRules] = useState<ConsolidationRule[]>([])
   const [variationsByArtist, setVariationsByArtist] = useState<Record<string, AlbumVariation[]>>({})
   const [rulesLoading, setRulesLoading] = useState(true)
   const [variationsLoading, setVariationsLoading] = useState(true)
@@ -105,6 +106,7 @@ export default function SettingsPage() {
   const [rulesSaveResult, setRulesSaveResult] = useState<{ success?: boolean; error?: string } | null>(null)
   const [expandedArtists, setExpandedArtists] = useState<Set<string>>(new Set())
   const [rulesSearch, setRulesSearch] = useState('')
+  const [minTotalPlaysFilter, setMinTotalPlaysFilter] = useState<string>('')
   const [mergeIntoTarget, setMergeIntoTarget] = useState<{
     artistName: string
     baseDisplayName: string
@@ -295,9 +297,12 @@ export default function SettingsPage() {
       try {
         const res = await fetch('/api/album-consolidation-rules', { cache: 'no-store' })
         const data = await res.json()
-        setRules(Array.isArray(data.rules) ? data.rules : [])
+        const loaded = Array.isArray(data.rules) ? data.rules : []
+        setRules(loaded)
+        setInitialRules(loaded)
       } catch {
         setRules([])
+        setInitialRules([])
       } finally {
         setRulesLoading(false)
       }
@@ -415,11 +420,79 @@ export default function SettingsPage() {
       ...rules.map((r) => r.artistName),
     ])
   ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-  const filteredArtistNames = rulesSearch.trim()
+  const filteredBySearch = rulesSearch.trim()
     ? artistNames.filter((a) =>
         a.toLowerCase().includes(rulesSearch.trim().toLowerCase())
       )
     : artistNames
+
+  type ConsolidatedGroup = { displayName: string; variations: AlbumVariation[]; rule?: ConsolidationRule }
+  const artistDisplayData = useMemo(() => {
+    const data: Record<string, { consolidated: ConsolidatedGroup[]; notConsolidated: [string, AlbumVariation[]][]; totalPlays: number }> = {}
+    const allArtistNames = new Set([
+      ...Object.keys(variationsByArtist),
+      ...rules.map((r) => r.artistName),
+    ])
+    allArtistNames.forEach((artistName) => {
+      const variations = variationsByArtist[artistName] || []
+      const artistRules = rules.filter((r) => r.artistName === artistName)
+      const totalPlays = variations.reduce((sum, v) => sum + v.count, 0)
+      const byNormalized = new Map<string, AlbumVariation[]>()
+      variations.forEach((v) => {
+        const k = normalizeAlbumKey(v.albumName)
+        if (!byNormalized.has(k)) byNormalized.set(k, [])
+        byNormalized.get(k)!.push(v)
+      })
+      const ruleToCovered = new Map<ConsolidationRule, AlbumVariation[]>()
+      artistRules.forEach((rule) => {
+        const covered = variations.filter(
+          (v) =>
+            normalizeAlbumKey(v.albumName) === normalizeAlbumKey(rule.baseAlbumName) ||
+            rule.variations.some((variation) => normalizeAlbumKey(variation) === normalizeAlbumKey(v.albumName))
+        )
+        if (covered.length > 0) ruleToCovered.set(rule, covered)
+      })
+      const coveredByRuleKeys = new Set(
+        [...ruleToCovered.values()].flatMap((list) => list.map((v) => normalizeAlbumKey(v.albumName)))
+      )
+      const consolidated: ConsolidatedGroup[] = []
+      ruleToCovered.forEach((covered, rule) => {
+        consolidated.push({ displayName: rule.baseAlbumName, variations: covered, rule })
+      })
+      byNormalized.forEach((list, normKey) => {
+        if (coveredByRuleKeys.has(normKey)) return
+        if (list.length >= 2) consolidated.push({ displayName: list[0]?.albumName ?? normKey, variations: list })
+      })
+      const notConsolidated = [...byNormalized.entries()].filter(
+        ([k, list]) => list.length === 1 && !coveredByRuleKeys.has(k)
+      )
+      data[artistName] = { consolidated, notConsolidated, totalPlays }
+    })
+    return data
+  }, [variationsByArtist, rules, rules.length])
+
+  const rulesDiff = useMemo(() => {
+    const key = (r: ConsolidationRule) => `${r.artistName}\0${normalizeAlbumKey(r.baseAlbumName)}`
+    const variationSet = (r: ConsolidationRule) => new Set(r.variations.map((v) => normalizeAlbumKey(v)).sort())
+    const initialByKey = new Map(initialRules.map((r) => [key(r), r]))
+    const addedOrModified: ConsolidationRule[] = []
+    rules.forEach((r) => {
+      const orig = initialByKey.get(key(r))
+      if (!orig) addedOrModified.push(r)
+      else if (variationSet(r).size !== variationSet(orig).size || [...variationSet(r)].some((v) => !variationSet(orig).has(v))) addedOrModified.push(r)
+    })
+    const currentByKey = new Set(rules.map((r) => key(r)))
+    const removed = initialRules.filter((r) => !currentByKey.has(key(r)))
+    return { addedOrModified, removed }
+  }, [rules, initialRules])
+
+  const hasRulesChanges = rulesDiff.addedOrModified.length > 0 || rulesDiff.removed.length > 0
+
+  const minPlays = minTotalPlaysFilter.trim() === '' ? null : parseInt(minTotalPlaysFilter, 10)
+  const filteredArtistNames =
+    minPlays != null && !Number.isNaN(minPlays)
+      ? filteredBySearch.filter((name) => (artistDisplayData[name]?.totalPlays ?? 0) >= minPlays)
+      : filteredBySearch
 
   const addRule = (artistName: string, baseAlbumName: string, variationAlbumNames: string[]) => {
     const variations = variationAlbumNames.filter((v) => v !== baseAlbumName)
@@ -447,6 +520,28 @@ export default function SettingsPage() {
   const removeRule = (index: number) => {
     setRules((prev) => prev.filter((_, i) => i !== index))
     setRulesSaveResult(null)
+    setMergeIntoTarget(null)
+    setMergeIntoSelected(new Set())
+  }
+
+  const ruleKey = (r: ConsolidationRule) => `${r.artistName}\0${normalizeAlbumKey(r.baseAlbumName)}`
+
+  const revertAddedOrModifiedRule = (rule: ConsolidationRule) => {
+    const initial = initialRules.find((o) => ruleKey(o) === ruleKey(rule))
+    setRules((prev) => {
+      if (initial) {
+        return prev.map((r) => (ruleKey(r) === ruleKey(rule) ? initial : r))
+      }
+      return prev.filter((r) => ruleKey(r) !== ruleKey(rule))
+    })
+    setRulesSaveResult(null)
+    setMergeIntoTarget(null)
+    setMergeIntoSelected(new Set())
+  }
+
+  const revertRemovedRule = (rule: ConsolidationRule) => {
+    setRules((prev) => [...prev, rule])
+    setRulesSaveResult(null)
   }
 
   const saveRules = async () => {
@@ -471,6 +566,7 @@ export default function SettingsPage() {
         return
       }
       setRulesSaveResult({ success: true })
+      setInitialRules(rules)
     } catch {
       setRulesSaveResult({ error: 'Failed to save rules' })
     } finally {
@@ -733,7 +829,7 @@ export default function SettingsPage() {
               Album consolidation rules
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              See album name variations per artist from your data and define rules so different versions (e.g. remasters) consolidate into one. Save writes <code className="text-foreground/80">album-consolidation-rules.json</code> to your repo. Use the upload secret above to save.
+              You choose what to merge: different spellings of the same album (e.g. deluxe, remastered) can be consolidated so you get a clearer picture of how much an album has actually been listened to. We already merge variations that only differ by casing or punctuation (e.g. different licenses or “Album” vs “album”) without rules. Here you add rules for other variations you want combined. Save writes <code className="text-foreground/80">album-consolidation-rules.json</code> to your repo; use the upload secret above to save.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -754,25 +850,43 @@ export default function SettingsPage() {
                     Showing artists with at least 2 different albums played (or with existing rules).
                   </p>
                 )}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="rules-search" className="text-sm font-medium">
-                    Filter by artist
-                  </label>
-                  <input
-                    id="rules-search"
-                    type="text"
-                    value={rulesSearch}
-                    onChange={(e) => setRulesSearch(e.target.value)}
-                    placeholder="Search artists..."
-                    className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  />
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="rules-search" className="text-sm font-medium">
+                      Filter by artist
+                    </label>
+                    <input
+                      id="rules-search"
+                      type="text"
+                      value={rulesSearch}
+                      onChange={(e) => setRulesSearch(e.target.value)}
+                      placeholder="Search artists..."
+                      className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="min-total-plays" className="text-sm font-medium">
+                      Min total plays
+                    </label>
+                    <input
+                      id="min-total-plays"
+                      type="number"
+                      min={0}
+                      value={minTotalPlaysFilter}
+                      onChange={(e) => setMinTotalPlaysFilter(e.target.value)}
+                      placeholder="Any"
+                      className="w-28 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  {filteredArtistNames.length} artist{filteredArtistNames.length !== 1 ? 's' : ''}
+                </p>
                 <ul className="space-y-2 max-h-[500px] overflow-y-auto">
                   {filteredArtistNames.map((artistName) => {
                     const expanded = expandedArtists.has(artistName)
-                    const variations = variationsByArtist[artistName] || []
-                    const artistRules = rules.filter((r) => r.artistName === artistName)
-                    const totalPlays = variations.reduce((sum, v) => sum + v.count, 0)
+                    const displayData = artistDisplayData[artistName]
+                    const hasVariations = (variationsByArtist[artistName]?.length ?? 0) > 0
                     return (
                       <li key={artistName} className="border border-border rounded-md overflow-hidden">
                         <button
@@ -783,38 +897,13 @@ export default function SettingsPage() {
                           <span>{artistName}</span>
                           {expanded ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
                         </button>
-                        {expanded && (
-                          <div className="px-3 pb-3 pt-0 space-y-3 border-t border-border">
-                            {variations.length > 0 && (() => {
-                              const byNormalized = new Map<string, AlbumVariation[]>()
-                              variations.forEach((v) => {
-                                const k = normalizeAlbumKey(v.albumName)
-                                if (!byNormalized.has(k)) byNormalized.set(k, [])
-                                byNormalized.get(k)!.push(v)
-                              })
-                              const ruleToCovered = new Map<ConsolidationRule, AlbumVariation[]>()
-                              artistRules.forEach((rule) => {
-                                const covered = variations.filter(
-                                  (v) =>
-                                    normalizeAlbumKey(v.albumName) === normalizeAlbumKey(rule.baseAlbumName) ||
-                                    rule.variations.some((variation) => normalizeAlbumKey(variation) === normalizeAlbumKey(v.albumName))
-                                )
-                                if (covered.length > 0) ruleToCovered.set(rule, covered)
-                              })
-                              const coveredByRuleKeys = new Set(
-                                [...ruleToCovered.values()].flatMap((list) => list.map((v) => normalizeAlbumKey(v.albumName)))
-                              )
-                              const consolidated: { displayName: string; variations: AlbumVariation[]; rule?: ConsolidationRule }[] = []
-                              ruleToCovered.forEach((covered, rule) => {
-                                consolidated.push({ displayName: rule.baseAlbumName, variations: covered, rule })
-                              })
-                              byNormalized.forEach((list, normKey) => {
-                                if (coveredByRuleKeys.has(normKey)) return
-                                if (list.length >= 2) consolidated.push({ displayName: list[0]?.albumName ?? normKey, variations: list })
-                              })
-                              const notConsolidated = [...byNormalized.entries()].filter(
-                                ([k, list]) => list.length === 1 && !coveredByRuleKeys.has(k)
-                              )
+                        {expanded && displayData && (
+                          <div
+                            key={`${artistName}-${displayData.consolidated.length}-${displayData.notConsolidated.length}-${displayData.notConsolidated.map(([k]) => k).sort().join('|')}`}
+                            className="px-3 pb-3 pt-0 space-y-3 border-t border-border"
+                          >
+                            {hasVariations && (() => {
+                              const { consolidated, notConsolidated, totalPlays } = displayData
                               return (
                                 <div className="space-y-3">
                                   <p className="text-xs font-medium text-muted-foreground">Album variations from your data</p>
@@ -847,15 +936,36 @@ export default function SettingsPage() {
                                                 >
                                                   <span className="font-medium">{group.displayName}</span>
                                                   <ul className="mt-1 space-y-0.5 ml-2">
-                                                    {group.variations.map((v) => {
-                                                      const pct = totalPlays > 0 ? Math.round((v.count / totalPlays) * 100) : 0
-                                                      return (
-                                                        <li key={v.albumName} className="flex justify-between gap-2 text-muted-foreground">
-                                                          <span className="truncate">{v.albumName}</span>
-                                                          <span className="shrink-0">{v.count.toLocaleString()} plays ({pct}%)</span>
-                                                        </li>
-                                                      )
-                                                    })}
+                                                    {(group.rule != null
+                                                      ? (() => {
+                                                          const seenKeys = new Set<string>()
+                                                          const names = [group.rule.baseAlbumName, ...group.rule.variations]
+                                                          return names
+                                                            .filter((name) => {
+                                                              const k = normalizeAlbumKey(name)
+                                                              if (seenKeys.has(k)) return false
+                                                              seenKeys.add(k)
+                                                              return true
+                                                            })
+                                                            .map((name) => {
+                                                              const k = normalizeAlbumKey(name)
+                                                              const match = group.variations.find((v) => normalizeAlbumKey(v.albumName) === k)
+                                                              const count = match ? match.count : 0
+                                                              const pct = totalPlays > 0 ? Math.round((count / totalPlays) * 100) : 0
+                                                              return { name, count, pct }
+                                                            })
+                                                        })()
+                                                      : group.variations.map((v) => ({
+                                                          name: v.albumName,
+                                                          count: v.count,
+                                                          pct: totalPlays > 0 ? Math.round((v.count / totalPlays) * 100) : 0,
+                                                        }))
+                                                    ).map(({ name, count, pct }) => (
+                                                      <li key={name} className="flex justify-between gap-2 text-muted-foreground">
+                                                        <span className="truncate">{name}</span>
+                                                        <span className="shrink-0">{count.toLocaleString()} plays ({pct}%)</span>
+                                                      </li>
+                                                    ))}
                                                   </ul>
                                                 </button>
                                                 {group.rule != null && (
@@ -1096,6 +1206,51 @@ export default function SettingsPage() {
                     </span>
                   )}
                 </div>
+                {hasRulesChanges && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Changes to commit ({rulesDiff.addedOrModified.length + rulesDiff.removed.length})
+                    </p>
+                    <ul className="max-h-48 overflow-y-auto rounded-md border border-border bg-muted/20 p-2 text-sm space-y-1.5">
+                      {rulesDiff.addedOrModified.map((r, i) => (
+                        <li key={`add-${r.artistName}-${r.baseAlbumName}-${i}`} className="flex flex-wrap items-center gap-x-1 gap-y-0.5 group">
+                          <span className="text-green-600 dark:text-green-500 shrink-0 font-medium">+</span>
+                          <span className="font-medium shrink-0">{r.artistName}</span>
+                          <span className="text-muted-foreground shrink-0">—</span>
+                          <span className="shrink-0">{r.baseAlbumName}</span>
+                          <span className="text-muted-foreground shrink-0">←</span>
+                          <span className="text-muted-foreground truncate min-w-0">{r.variations.join(', ')}</span>
+                          <button
+                            type="button"
+                            onClick={() => revertAddedOrModifiedRule(r)}
+                            className="ml-auto shrink-0 text-muted-foreground hover:text-foreground p-0.5 rounded"
+                            aria-label={`Revert change for ${r.baseAlbumName}`}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))}
+                      {rulesDiff.removed.map((r, i) => (
+                        <li key={`rem-${r.artistName}-${r.baseAlbumName}-${i}`} className="flex flex-wrap items-center gap-x-1 gap-y-0.5 group">
+                          <span className="text-red-600 dark:text-red-500 shrink-0 font-medium">−</span>
+                          <span className="font-medium shrink-0">{r.artistName}</span>
+                          <span className="text-muted-foreground shrink-0">—</span>
+                          <span className="shrink-0">{r.baseAlbumName}</span>
+                          <span className="text-muted-foreground shrink-0">←</span>
+                          <span className="text-muted-foreground truncate min-w-0">{r.variations.join(', ')}</span>
+                          <button
+                            type="button"
+                            onClick={() => revertRemovedRule(r)}
+                            className="ml-auto shrink-0 text-muted-foreground hover:text-foreground p-0.5 rounded"
+                            aria-label={`Undo removal of ${r.baseAlbumName}`}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </CardContent>
