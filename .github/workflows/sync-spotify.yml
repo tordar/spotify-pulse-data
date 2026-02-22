@@ -95,14 +95,49 @@ jobs:
           git fetch origin master
           git pull --rebase origin master || git pull --no-edit origin master || echo "No remote changes to pull"
 
+      - name: Ensure merged history dir and check for base file
+        id: check-merged
+        run: |
+          mkdir -p data/merged-streaming-history
+          if ls data/merged-streaming-history/merged-streaming-history-*.json 1>/dev/null 2>&1; then
+            echo "has_merged_file=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_merged_file=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore merged history from cache (when repo has no base file)
+        if: steps.check-merged.outputs.has_merged_file == 'false'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/merged-streaming-history
+          key: merged-streaming-history-${{ github.ref }}
+
       - name: Merge recent data with merged streaming history
+        id: merge
         run: npm run merge-recent-data
+
+      - name: Verify merged file was produced
+        run: |
+          COUNT=$(ls -1 data/merged-streaming-history/merged-streaming-history-*.json 2>/dev/null | wc -l)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::Merge did not produce a merged file"
+            exit 1
+          fi
+          echo "Merged file(s):"
+          ls -la data/merged-streaming-history/
 
       - name: Upload merged data
         uses: actions/upload-artifact@v4
         with:
           name: merged-data
           path: data/merged-streaming-history/
+
+      - name: Save merged history to cache
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: data/merged-streaming-history
+          key: merged-streaming-history-${{ github.ref }}
 
   generate-files:
     needs: [fetch-check, merge-data]

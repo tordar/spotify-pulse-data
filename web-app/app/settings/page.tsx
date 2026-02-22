@@ -596,7 +596,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader className="cursor-pointer" onClick={() => setSetupGuideOpen((o) => !o)}>
             <div className="flex items-center justify-between">
-              <CardTitle>Set up your own instance</CardTitle>
+              <CardTitle>Set up your own Pulse</CardTitle>
               <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground p-1 -mr-1"
