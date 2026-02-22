@@ -2,7 +2,7 @@
   "metadata": {
     "totalArtists": 2185,
     "minPlayCount": 10,
-    "timestamp": "2026-02-20T17:40:45.722Z",
+    "timestamp": "2026-02-22T10:46:20.970Z",
     "source": "Merged Streaming History"
   },
   "artists": [
@@ -6690,8 +6690,7 @@
       "genres": [
         "norsk rock",
         "stoner rock",
-        "stoner metal",
-        "space rock"
+        "stoner metal"
       ]
     },
     {
@@ -8330,8 +8329,8 @@
       "play_count": 28,
       "genres": [
         "classic rock",
-        "acid rock",
-        "psychedelic rock"
+        "psychedelic rock",
+        "acid rock"
       ]
     },
     {
@@ -8430,7 +8429,8 @@
         "psychobilly",
         "horror punk",
         "rockabilly",
-        "deathrock"
+        "deathrock",
+        "gothic rock"
       ]
     },
     {
@@ -8677,6 +8677,7 @@
       "name": "Toys That Kill",
       "play_count": 27,
       "genres": [
+        "egg punk",
         "punk"
       ]
     },
@@ -10148,8 +10149,7 @@
       "genres": [
         "country",
         "country christian",
-        "classic country",
-        "traditional country"
+        "classic country"
       ]
     },
     {
@@ -12401,8 +12401,8 @@
       "genres": [
         "progressive rock",
         "art rock",
-        "baroque pop",
         "psychedelic rock",
+        "baroque pop",
         "blues"
       ]
     },
@@ -13384,7 +13384,8 @@
       "play_count": 14,
       "genres": [
         "horror punk",
-        "psychobilly"
+        "psychobilly",
+        "punk"
       ]
     },
     {
@@ -15309,7 +15310,8 @@
       "play_count": 11,
       "genres": [
         "anti-folk",
-        "folk punk"
+        "folk punk",
+        "experimental hip hop"
       ]
     },
     {
@@ -16679,8 +16681,8 @@
       "name": "Lali Puna",
       "play_count": 10,
       "genres": [
-        "electropop",
         "indie electronic",
+        "electropop",
         "idm"
       ]
     },
