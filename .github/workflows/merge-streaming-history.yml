@@ -10,6 +10,12 @@ on:
       - 'data/spotify-history/**'
   workflow_dispatch: # Allow manual triggers
 
+# When the UI uploads history in chunks, each chunk creates a commit and triggers this workflow.
+# Only run the latest; cancel any in-progress run so we merge once after all uploads.
+concurrency:
+  group: merge-streaming-history-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   merge-history:
     runs-on: ubuntu-latest
