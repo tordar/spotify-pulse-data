@@ -21,7 +21,7 @@ export function getSpotifyCallbackRedirectUri(request?: { headers: { get(name: s
   }
   const vercelUrl = process.env.VERCEL_URL?.trim()
   if (vercelUrl) return `https://${vercelUrl}/callback`
-  return `${(process.env.APP_URL || 'http://localhost:3000').trim()}/callback`
+  return `${(process.env.APP_URL || 'http://127.0.0.1:3000').trim()}/callback`
 }
 
 function getEncryptionKey(): Buffer {

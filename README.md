@@ -55,12 +55,14 @@ cd web-app && npm install && cd ..
 npm run web:dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) (use 127.0.0.1 so the Spotify redirect URI matches).
 
 ### Step 3: Set up your Spotify Developer application
 
 1. Create an app at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Note **Client ID** and **Client Secret**. In your Spotify app, add this redirect URI: `https://your-app.vercel.app/callback` (use your actual Vercel URL or custom domain, e.g. `https://pulse.example.com/callback`). For local dev use the same host as in your browser, e.g. `http://127.0.0.1:3000/callback` or `http://localhost:3000/callback`.
+2. Note **Client ID** and **Client Secret**. In your Spotify app, go to **Settings** → **Redirect URIs** and add the exact URL(s) you will use:
+   - **Production:** your live app URL, e.g. `https://your-app.vercel.app/callback` or `https://pulse.example.com/callback`
+   - **Local dev:** `http://127.0.0.1:3000/callback` (use **127.0.0.1**, not localhost—Spotify often rejects localhost)
 3. Get a refresh token: open your deployed app → **Settings**, enter Client ID and Client Secret in the Spotify section, then click **Authorize with Spotify**. You’ll be sent to Spotify to authorize, then back to the app to copy the refresh token. Add that token plus Client ID and Client Secret in the next step.
 4. (Optional) If you prefer not to set SPOTIFY_OAUTH_STATE_SECRET (step 2), get a refresh token locally: run `npm run setup-spotify-auth` in the project root (add redirect URI `http://127.0.0.1:3847/callback` in your Spotify app) and use the printed values.
 

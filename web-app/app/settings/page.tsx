@@ -657,8 +657,12 @@ export default function SettingsPage() {
                   </p>
                   <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-1">
                     <li>Create an app at <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Spotify Developer Dashboard <ExternalLink className="w-3 h-3" /></a>.</li>
-                    <li>Note <strong>Client ID</strong> and <strong>Client Secret</strong>. In your app, add this redirect URI: <code className="text-foreground/80">https://your-app.vercel.app/callback</code> (use your actual Vercel URL or custom domain). For local dev use the same host as in your browser, e.g. <code className="text-foreground/80">http://127.0.0.1:3000/callback</code> or <code className="text-foreground/80">http://localhost:3000/callback</code>.</li>
-                    <li>Get a refresh token below: enter Client ID and Client Secret, click <strong>Authorize with Spotify</strong>. You will be sent to Spotify to authorize, then back here to copy the refresh token.</li>
+                    <li className="space-y-1.5">
+                      <span>Note <strong>Client ID</strong> and <strong>Client Secret</strong>. In your Spotify app, open <strong>Settings</strong> → <strong>Redirect URIs</strong> and add the exact URL(s) you will use:</span>
+                      <span className="block">• Production: your live app URL, e.g. <code className="text-foreground/80">https://your-app.vercel.app/callback</code></span>
+                      <span className="block">• Local dev: <code className="text-foreground/80">http://127.0.0.1:3000/callback</code> (use 127.0.0.1, not localhost—Spotify rejects localhost)</span>
+                    </li>
+                    <li>Get a refresh token below: enter Client ID and Client Secret, click <strong>Authorize with Spotify</strong> to get a refresh token.</li>
                     <li>Add the three values (Client ID, Client Secret, refresh token) to GitHub and Vercel in the next step.</li>
                   </ol>
                   <form
@@ -722,9 +726,9 @@ export default function SettingsPage() {
                       {spotifyAuthSubmitting ? 'Redirecting…' : 'Authorize with Spotify'}
                     </button>
                   </form>
-                  <p className="text-xs text-muted-foreground">
+                  {/* <p className="text-xs text-muted-foreground">
                     Alternatively, run <code className="bg-muted px-1 rounded">npm run setup-spotify-auth</code> in the project root (redirect URI: <code className="bg-muted px-1 rounded">http://127.0.0.1:3847/callback</code>).
-                  </p>
+                  </p> */}
                 </section>
 
                 <section className="space-y-4">
