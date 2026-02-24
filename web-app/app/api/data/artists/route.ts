@@ -33,11 +33,25 @@ export async function GET() {
       for (const item of playsToAppend) {
         const artistIds = item.track.artists?.map(a => a.id).filter(Boolean) ?? []
         const durationMs = durationPerPlay(item)
-        const artists = item.track.artists?.map(a => a.name).join(', ') ?? ''
-        console.log('[artists] Appended:', item.track.name, '—', artists)
+        const trackName = item.track.name
         for (const artistId of artistIds) {
-          const artist = data.artists.find((a: { primaryArtistId?: string }) => a.primaryArtistId === artistId)
-          if (!artist) continue
+          const artistName = item.track.artists?.find((a: { id?: string }) => a.id === artistId)?.name ?? 'Unknown'
+          let artist = data.artists.find(
+            (a: { primaryArtistId?: string; original_artistIds?: (string | null)[] }) =>
+              a.primaryArtistId === artistId || (Array.isArray(a.original_artistIds) && a.original_artistIds.includes(artistId))
+          )
+          if (!artist && artistName) {
+            const byName = data.artists.find(
+              (a: { artist?: { name?: string } }) =>
+                a.artist?.name?.toLowerCase().trim() === artistName.toLowerCase().trim()
+            )
+            if (byName) artist = byName
+          }
+          if (!artist) {
+            console.log('[artists] Not appended (artist not in top list):', trackName, '—', artistName)
+            continue
+          }
+          console.log('[artists] Appended:', trackName, '→', artistName)
           artist.count = (artist.count ?? 0) + 1
           artist.total_count = (artist.total_count ?? 0) + 1
           artist.total_duration_ms = (artist.total_duration_ms ?? 0) + durationMs
