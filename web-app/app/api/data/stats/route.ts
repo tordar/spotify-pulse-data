@@ -2,10 +2,96 @@ import { NextResponse } from 'next/server'
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import { getCleanedDataDir } from '@/lib/data-dir'
-import { getRecentlyPlayed } from '@/lib/spotify-recently-played'
+import { getRecentlyPlayed, type PlayHistoryItem } from '@/lib/spotify-recently-played'
 
 const MS_PER_HOUR = 60 * 60 * 1000
 const MS_PER_DAY = 24 * MS_PER_HOUR
+
+function norm(s: string): string {
+  return s.toLowerCase().trim()
+}
+
+function toImage(img: { url: string; height?: number | null; width?: number | null }): { height: number; url: string; width: number } {
+  return { url: img.url, height: img.height ?? 0, width: img.width ?? 0 }
+}
+
+function mergeRecentlyPlayedIntoYearTopItems(
+  yearTopItems: {
+    topSongs: Array<{ songId: string; name: string; artist: string; playCount: number; totalListeningTimeMs: number; images: Array<{ height: number; url: string; width: number }> }>
+    topArtists: Array<{ artistName: string; playCount: number; totalListeningTimeMs: number; uniqueSongs: number; images: Array<{ height: number; url: string; width: number }> }>
+    topAlbums: Array<{ albumName: string; artist: string; playCount: number; totalListeningTimeMs: number; uniqueSongs: number; images: Array<{ height: number; url: string; width: number }> }>
+  },
+  plays: PlayHistoryItem[]
+): void {
+  for (const item of plays) {
+    const track = item.track
+    const durationMs = track.duration_ms ?? 0
+    const primaryArtist = track.artists?.[0]?.name ?? ''
+    const albumName = track.album?.name ?? ''
+    const images = (track.album?.images ?? []).map(toImage)
+
+    const songId = track.id
+    if (songId) {
+      const existing = yearTopItems.topSongs.find((s) => s.songId === songId)
+      if (existing) {
+        existing.playCount += 1
+        existing.totalListeningTimeMs += durationMs
+      } else {
+        yearTopItems.topSongs.push({
+          songId,
+          name: track.name ?? '',
+          artist: primaryArtist,
+          playCount: 1,
+          totalListeningTimeMs: durationMs,
+          images,
+        })
+      }
+    }
+
+    if (primaryArtist) {
+      const existing = yearTopItems.topArtists.find((a) => norm(a.artistName) === norm(primaryArtist))
+      if (existing) {
+        existing.playCount += 1
+        existing.totalListeningTimeMs += durationMs
+      } else {
+        yearTopItems.topArtists.push({
+          artistName: primaryArtist,
+          playCount: 1,
+          totalListeningTimeMs: durationMs,
+          uniqueSongs: 1,
+          images: [], // Recently played track doesn't include artist images
+        })
+      }
+    }
+
+    if (albumName && primaryArtist) {
+      const existing = yearTopItems.topAlbums.find(
+        (a) => norm(a.albumName) === norm(albumName) && norm(a.artist) === norm(primaryArtist)
+      )
+      if (existing) {
+        existing.playCount += 1
+        existing.totalListeningTimeMs += durationMs
+      } else {
+        yearTopItems.topAlbums.push({
+          albumName,
+          artist: primaryArtist,
+          playCount: 1,
+          totalListeningTimeMs: durationMs,
+          uniqueSongs: 1,
+          images,
+        })
+      }
+    }
+  }
+
+  yearTopItems.topSongs.sort((a, b) => b.playCount - a.playCount)
+  yearTopItems.topArtists.sort((a, b) => b.playCount - a.playCount)
+  yearTopItems.topAlbums.sort((a, b) => b.playCount - a.playCount)
+
+  yearTopItems.topSongs.splice(5)
+  yearTopItems.topArtists.splice(5)
+  yearTopItems.topAlbums.splice(5)
+}
 
 export async function GET() {
   try {
@@ -60,6 +146,16 @@ export async function GET() {
           data.stats.totalListeningEvents += extraPlays
         }
       }
+
+      if (data.stats?.yearlyTopItems && playsToAppend.length > 0) {
+        const yearTopEntry = data.stats.yearlyTopItems.find(
+          (y: { year: string }) => y.year === currentYear
+        )
+        if (yearTopEntry) {
+          mergeRecentlyPlayedIntoYearTopItems(yearTopEntry, playsToAppend)
+        }
+      }
+
       if (data.metadata) {
         data.metadata.recentlyPlayedMergedAt = new Date().toISOString()
       }
