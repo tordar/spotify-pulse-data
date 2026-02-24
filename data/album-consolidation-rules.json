@@ -305,7 +305,8 @@
       "baseAlbumName": "Bon Iver",
       "variations": [
         "bon iver",
-        "bon iver (10th anniversary edition)"
+        "bon iver (10th anniversary edition)",
+        "Bon Iver, Bon Iver"
       ]
     },
     {
@@ -313,7 +314,8 @@
       "baseAlbumName": "Blood Bank",
       "variations": [
         "blood bank",
-        "blood bank (live from ericsson globe, stockholm se, oct 31 2018)"
+        "blood bank (live from ericsson globe, stockholm se, oct 31 2018)",
+        "Blood Bank EP"
       ]
     },
     {
@@ -2542,6 +2544,13 @@
       "baseAlbumName": "There's No Leaving Now",
       "variations": [
         "There´s No Leaving Now"
+      ]
+    },
+    {
+      "artistName": "Bon Iver",
+      "baseAlbumName": "SABLE, fABLE",
+      "variations": [
+        "SABLE,"
       ]
     }
   ]
