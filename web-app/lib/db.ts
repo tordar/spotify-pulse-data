@@ -8,11 +8,24 @@ function getDbPath(): string {
   const envDir = process.env.DATA_DIR?.trim()
   if (envDir) return join(envDir, 'library.db')
 
-  const fromWebApp = join(process.cwd(), '..', 'data', 'library.db')
-  const fromRepoRoot = join(process.cwd(), 'data', 'library.db')
-  if (existsSync(fromWebApp)) return fromWebApp
-  if (existsSync(fromRepoRoot)) return fromRepoRoot
-  return fromWebApp
+  // Candidates in priority order.
+  // On Vercel, __dirname is inside .next/server/… so we walk up to the monorepo root.
+  const candidates = [
+    // local dev: web-app/lib/ → web-app/../data/
+    join(__dirname, '..', '..', 'data', 'library.db'),
+    // Vercel standalone: /var/task/web-app/../data/ (outputFileTracingRoot = monorepo root)
+    join(__dirname, '..', '..', '..', 'data', 'library.db'),
+    // cwd-based fallbacks
+    join(process.cwd(), '..', 'data', 'library.db'),
+    join(process.cwd(), 'data', 'library.db'),
+  ]
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate
+  }
+
+  // Last resort — return the first candidate so the error message is meaningful
+  return candidates[0]
 }
 
 export function getDb(): Database.Database {
