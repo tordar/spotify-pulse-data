@@ -1,53 +1,27 @@
-import Database from 'better-sqlite3'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { createClient, type Client } from '@libsql/client'
 
-let _db: Database.Database | null = null
+let _client: Client | null = null
 
-function getDbPath(): string {
-  const envDir = process.env.DATA_DIR?.trim()
-  if (envDir) return join(envDir, 'library.db')
+export function getDb(): Client {
+  if (_client) return _client
 
-  // Candidates in priority order.
-  // On Vercel, __dirname is inside .next/server/… so we walk up to the monorepo root.
-  const candidates = [
-    // local dev: web-app/lib/ → web-app/../data/
-    join(__dirname, '..', '..', 'data', 'library.db'),
-    // Vercel standalone: /var/task/web-app/../data/ (outputFileTracingRoot = monorepo root)
-    join(__dirname, '..', '..', '..', 'data', 'library.db'),
-    // cwd-based fallbacks
-    join(process.cwd(), '..', 'data', 'library.db'),
-    join(process.cwd(), 'data', 'library.db'),
-  ]
+  const url = process.env.TURSO_DATABASE_URL
+  const authToken = process.env.TURSO_AUTH_TOKEN
 
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return candidate
+  if (!url) {
+    throw new Error(
+      'TURSO_DATABASE_URL is not set. ' +
+      'Add it to Vercel project settings or .env.local for local dev.'
+    )
   }
 
-  // Last resort — return the first candidate so the error message is meaningful
-  return candidates[0]
+  _client = createClient({ url, authToken })
+  return _client
 }
 
-export function getDb(): Database.Database {
-  if (_db) return _db
-
-  const dbPath = getDbPath()
-  if (!existsSync(dbPath)) {
-    throw new Error(`Database not found at ${dbPath}. Run 'npm run db:import' first.`)
-  }
-
-  // readonly + fileMustExist: no write operations needed.
-  // Do NOT set journal_mode pragmas — doing so on a read-only connection tries to
-  // write lock/WAL files and throws "unable to open database file" on Vercel's
-  // read-only /var/task filesystem.
-  _db = new Database(dbPath, { readonly: true, fileMustExist: true })
-  return _db
-}
-
-export function buildSpotifyImageArray(imageUrl: string | null): Array<{ url: string; width: number; height: number }> {
+export function buildSpotifyImageArray(imageUrl: string | null | undefined): Array<{ url: string; width: number; height: number }> {
   if (!imageUrl) return []
 
-  // Spotify CDN images follow predictable URL patterns based on size prefix
   const match = imageUrl.match(/\/image\/ab67616d\w{8}(\w+)$/)
   if (match) {
     const hash = match[1]
@@ -58,15 +32,10 @@ export function buildSpotifyImageArray(imageUrl: string | null): Array<{ url: st
     ]
   }
 
-  // Non-standard URL — return as-is
-  if (imageUrl) {
-    return [{ url: imageUrl, width: 640, height: 640 }]
-  }
-
-  return []
+  return [{ url: imageUrl, width: 640, height: 640 }]
 }
 
-export function buildArtistImageArray(imageUrl: string | null): Array<{ url: string; width: number; height: number }> {
+export function buildArtistImageArray(imageUrl: string | null | undefined): Array<{ url: string; width: number; height: number }> {
   if (!imageUrl) return []
   return [{ url: imageUrl, width: 640, height: 640 }]
 }

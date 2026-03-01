@@ -8,76 +8,106 @@ export async function GET() {
   try {
     const db = getDb()
 
-    // Yearly listening time
-    const yearlyRows = db.prepare(`
-      SELECT
-        strftime('%Y', played_at) as year,
-        SUM(ms_played) as totalListeningTimeMs,
-        COUNT(*) as playCount
-      FROM listening_events
-      GROUP BY year ORDER BY year
-    `).all() as Array<{ year: string; totalListeningTimeMs: number; playCount: number }>
+    // Run independent top-level queries in parallel
+    const [yearlyResult, totalsResult, hourlyResult, countryResult] = await Promise.all([
+      db.execute(`
+        SELECT
+          strftime('%Y', played_at) as year,
+          SUM(ms_played) as totalListeningTimeMs,
+          COUNT(*) as playCount
+        FROM listening_events
+        GROUP BY year ORDER BY year
+      `),
+      db.execute(`
+        SELECT SUM(ms_played) as totalMs, COUNT(*) as totalEvents
+        FROM listening_events
+      `),
+      db.execute(`
+        SELECT
+          CAST(strftime('%H', played_at) AS INTEGER) as hour,
+          SUM(ms_played) as totalListeningTimeMs,
+          COUNT(*) as playCount
+        FROM listening_events
+        GROUP BY hour ORDER BY hour
+      `),
+      db.execute(`
+        SELECT
+          conn_country as countryCode,
+          SUM(ms_played) as totalMsPlayed,
+          COUNT(*) as playCount,
+          MIN(played_at) as firstPlayedAt,
+          MAX(played_at) as lastPlayedAt
+        FROM listening_events
+        WHERE conn_country IS NOT NULL AND conn_country != ''
+        GROUP BY conn_country ORDER BY totalMsPlayed DESC
+      `),
+    ])
 
-    const yearlyListeningTime = yearlyRows.map(r => ({
-      year: r.year,
-      totalListeningTimeMs: r.totalListeningTimeMs,
-      totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
-      playCount: r.playCount,
-      totalPodcastListeningTimeMs: 0,
-      totalPodcastListeningHours: 0,
-    }))
+    const yearlyRows = yearlyResult.rows as unknown as Array<{
+      year: string; totalListeningTimeMs: number; playCount: number;
+    }>
+    const totals = totalsResult.rows[0] as unknown as { totalMs: number; totalEvents: number }
+    const hourlyRows = hourlyResult.rows as unknown as Array<{
+      hour: number; totalListeningTimeMs: number; playCount: number;
+    }>
+    const countryRows = countryResult.rows as unknown as Array<{
+      countryCode: string; totalMsPlayed: number; playCount: number;
+      firstPlayedAt: string; lastPlayedAt: string;
+    }>
 
-    // Total stats
-    const totals = db.prepare(`
-      SELECT SUM(ms_played) as totalMs, COUNT(*) as totalEvents
-      FROM listening_events
-    `).get() as { totalMs: number; totalEvents: number }
-
-    const totalListeningHours = Math.round((totals.totalMs / MS_PER_HOUR) * 100) / 100
-    const totalListeningDays = Math.round((totals.totalMs / MS_PER_DAY) * 100) / 100
-
-    // Yearly top items (top 5 songs, artists, albums per year)
     const years = yearlyRows.map(r => r.year)
-    const yearlyTopItems = years.map(year => {
-      const topSongs = db.prepare(`
-        SELECT t.spotify_id as songId, t.name, a.name as artist, al.image_url,
-               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs
-        FROM listening_events le
-        JOIN tracks t ON t.id = le.track_id
-        JOIN artists a ON a.id = t.artist_id
-        JOIN albums al ON al.id = t.album_id
-        WHERE strftime('%Y', le.played_at) = ?
-        GROUP BY t.id ORDER BY playCount DESC LIMIT 5
-      `).all(year) as Array<{
-        songId: string; name: string; artist: string; image_url: string | null;
+
+    // Batch all per-year top-5 queries in one round trip (3 queries × N years)
+    const topSongsSql = `
+      SELECT t.spotify_id as songId, t.name, a.name as artist, al.image_url,
+             COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs
+      FROM listening_events le
+      JOIN tracks t ON t.id = le.track_id
+      JOIN artists a ON a.id = t.artist_id
+      JOIN albums al ON al.id = t.album_id
+      WHERE strftime('%Y', le.played_at) = ?
+      GROUP BY t.id ORDER BY playCount DESC LIMIT 5
+    `
+    const topArtistsSql = `
+      SELECT a.name as artistName, a.image_url,
+             COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
+             COUNT(DISTINCT t.id) as uniqueSongs
+      FROM listening_events le
+      JOIN tracks t ON t.id = le.track_id
+      JOIN artists a ON a.id = t.artist_id
+      WHERE strftime('%Y', le.played_at) = ?
+      GROUP BY a.id ORDER BY playCount DESC LIMIT 5
+    `
+    const topAlbumsSql = `
+      SELECT al.name as albumName, a.name as artist, al.image_url,
+             COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
+             COUNT(DISTINCT t.id) as uniqueSongs
+      FROM listening_events le
+      JOIN tracks t ON t.id = le.track_id
+      JOIN artists a ON a.id = t.artist_id
+      JOIN albums al ON al.id = t.album_id
+      WHERE strftime('%Y', le.played_at) = ?
+      GROUP BY al.id ORDER BY playCount DESC LIMIT 5
+    `
+
+    const batchStatements = years.flatMap(year => [
+      { sql: topSongsSql, args: [year] as [string] },
+      { sql: topArtistsSql, args: [year] as [string] },
+      { sql: topAlbumsSql, args: [year] as [string] },
+    ])
+
+    const batchResults = await db.batch(batchStatements, 'read')
+
+    const yearlyTopItems = years.map((year, i) => {
+      const topSongs = batchResults[i * 3].rows as unknown as Array<{
+        songId: string | null; name: string; artist: string; image_url: string | null;
         playCount: number; totalListeningTimeMs: number;
       }>
-
-      const topArtists = db.prepare(`
-        SELECT a.name as artistName, a.image_url,
-               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
-               COUNT(DISTINCT t.id) as uniqueSongs
-        FROM listening_events le
-        JOIN tracks t ON t.id = le.track_id
-        JOIN artists a ON a.id = t.artist_id
-        WHERE strftime('%Y', le.played_at) = ?
-        GROUP BY a.id ORDER BY playCount DESC LIMIT 5
-      `).all(year) as Array<{
+      const topArtists = batchResults[i * 3 + 1].rows as unknown as Array<{
         artistName: string; image_url: string | null;
         playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
       }>
-
-      const topAlbums = db.prepare(`
-        SELECT al.name as albumName, a.name as artist, al.image_url,
-               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
-               COUNT(DISTINCT t.id) as uniqueSongs
-        FROM listening_events le
-        JOIN tracks t ON t.id = le.track_id
-        JOIN artists a ON a.id = t.artist_id
-        JOIN albums al ON al.id = t.album_id
-        WHERE strftime('%Y', le.played_at) = ?
-        GROUP BY al.id ORDER BY playCount DESC LIMIT 5
-      `).all(year) as Array<{
+      const topAlbums = batchResults[i * 3 + 2].rows as unknown as Array<{
         albumName: string; artist: string; image_url: string | null;
         playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
       }>
@@ -110,15 +140,17 @@ export async function GET() {
       }
     })
 
-    // Hourly listening distribution
-    const hourlyRows = db.prepare(`
-      SELECT
-        CAST(strftime('%H', played_at) AS INTEGER) as hour,
-        SUM(ms_played) as totalListeningTimeMs,
-        COUNT(*) as playCount
-      FROM listening_events
-      GROUP BY hour ORDER BY hour
-    `).all() as Array<{ hour: number; totalListeningTimeMs: number; playCount: number }>
+    const totalListeningHours = Math.round((totals.totalMs / MS_PER_HOUR) * 100) / 100
+    const totalListeningDays = Math.round((totals.totalMs / MS_PER_DAY) * 100) / 100
+
+    const yearlyListeningTime = yearlyRows.map(r => ({
+      year: r.year,
+      totalListeningTimeMs: r.totalListeningTimeMs,
+      totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
+      playCount: r.playCount,
+      totalPodcastListeningTimeMs: 0,
+      totalPodcastListeningHours: 0,
+    }))
 
     const hourlyListeningDistribution = Array.from({ length: 24 }, (_, h) => {
       const row = hourlyRows.find(r => r.hour === h)
@@ -130,22 +162,6 @@ export async function GET() {
       }
     })
 
-    // Country listening data
-    const countryRows = db.prepare(`
-      SELECT
-        conn_country as countryCode,
-        SUM(ms_played) as totalMsPlayed,
-        COUNT(*) as playCount,
-        MIN(played_at) as firstPlayedAt,
-        MAX(played_at) as lastPlayedAt
-      FROM listening_events
-      WHERE conn_country IS NOT NULL AND conn_country != ''
-      GROUP BY conn_country ORDER BY totalMsPlayed DESC
-    `).all() as Array<{
-      countryCode: string; totalMsPlayed: number; playCount: number;
-      firstPlayedAt: string; lastPlayedAt: string;
-    }>
-
     const countryListeningData = countryRows.map(r => ({
       countryCode: r.countryCode,
       totalMsPlayed: r.totalMsPlayed,
@@ -156,10 +172,7 @@ export async function GET() {
     }))
 
     return NextResponse.json({
-      metadata: {
-        timestamp: new Date().toISOString(),
-        source: 'SQLite Database',
-      },
+      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
       stats: {
         yearlyListeningTime,
         yearlyTopItems,

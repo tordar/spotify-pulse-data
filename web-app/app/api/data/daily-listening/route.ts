@@ -28,20 +28,25 @@ export async function GET(request: Request) {
     const startDate = `${minYear}-01-01`
     const endDate = `${maxYear}-12-31`
 
-    const rows = db.prepare(`
-      SELECT
-        le.played_at,
-        le.ms_played,
-        t.name as songName,
-        a.name as artistName,
-        al.name as albumName
-      FROM listening_events le
-      JOIN tracks t ON t.id = le.track_id
-      JOIN artists a ON a.id = t.artist_id
-      JOIN albums al ON al.id = t.album_id
-      WHERE date(le.played_at) >= ? AND date(le.played_at) <= ?
-      ORDER BY le.played_at
-    `).all(startDate, endDate) as Array<{
+    const { rows } = await db.execute({
+      sql: `
+        SELECT
+          le.played_at,
+          le.ms_played,
+          t.name as songName,
+          a.name as artistName,
+          al.name as albumName
+        FROM listening_events le
+        JOIN tracks t ON t.id = le.track_id
+        JOIN artists a ON a.id = t.artist_id
+        JOIN albums al ON al.id = t.album_id
+        WHERE date(le.played_at) >= ? AND date(le.played_at) <= ?
+        ORDER BY le.played_at
+      `,
+      args: [startDate, endDate],
+    })
+
+    const listeningRows = rows as unknown as Array<{
       played_at: string; ms_played: number;
       songName: string; artistName: string; albumName: string;
     }>
@@ -50,7 +55,7 @@ export async function GET(request: Request) {
       songName: string; artists: string[]; albumName: string; msPlayed: number;
     }> }>()
 
-    for (const row of rows) {
+    for (const row of listeningRows) {
       const d = new Date(row.played_at)
       d.setUTCHours(0, 0, 0, 0)
       const key = d.getTime()

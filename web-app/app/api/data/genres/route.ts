@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const db = getDb()
 
-    const rows = db.prepare(`
+    const { rows } = await db.execute(`
       SELECT a.name as artistName, a.genres, COUNT(le.id) as playCount
       FROM artists a
       JOIN tracks t ON t.artist_id = a.id
@@ -14,11 +14,12 @@ export async function GET() {
       GROUP BY a.id
       HAVING playCount > 0
       ORDER BY playCount DESC
-    `).all() as Array<{ artistName: string; genres: string; playCount: number }>
+    `)
 
+    const genreRows = rows as unknown as Array<{ artistName: string; genres: string; playCount: number }>
     const genreMap = new Map<string, { count: number; artists: string[] }>()
 
-    for (const row of rows) {
+    for (const row of genreRows) {
       let genres: string[]
       try { genres = JSON.parse(row.genres) } catch { continue }
 
@@ -36,18 +37,11 @@ export async function GET() {
     }
 
     const genres = Array.from(genreMap.entries())
-      .map(([genre, data]) => ({
-        genre,
-        count: data.count,
-        artists: data.artists,
-      }))
+      .map(([genre, data]) => ({ genre, count: data.count, artists: data.artists }))
       .sort((a, b) => b.count - a.count)
 
     return NextResponse.json({
-      metadata: {
-        timestamp: new Date().toISOString(),
-        source: 'SQLite Database',
-      },
+      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
       genres,
     })
   } catch (error) {

@@ -6,7 +6,7 @@ export async function GET() {
     const db = getDb()
 
     // Top 500 albums by play count
-    const albums = db.prepare(`
+    const { rows: albumRows } = await db.execute(`
       SELECT
         al.id as albumId,
         al.name as albumName,
@@ -27,7 +27,9 @@ export async function GET() {
       HAVING playCount > 0
       ORDER BY playCount DESC
       LIMIT 500
-    `).all() as Array<{
+    `)
+
+    const albums = albumRows as unknown as Array<{
       albumId: number; albumName: string; artistName: string;
       spotifyId: string | null; image_url: string | null;
       release_date: string | null; album_type: string | null;
@@ -36,30 +38,55 @@ export async function GET() {
       earliestPlayedAt: string | null;
     }>
 
-    const getSongsForAlbum = db.prepare(`
-      SELECT
-        t.id, t.spotify_id as songId, t.name, t.duration_ms,
-        t.track_number, t.disc_number,
-        a.name as artistName,
-        COUNT(le.id) as playCount,
-        SUM(le.ms_played) as totalListeningTimeMs
-      FROM tracks t
-      JOIN artists a ON a.id = t.artist_id
-      LEFT JOIN listening_events le ON le.track_id = t.id
-      WHERE t.album_id = ?
-      GROUP BY t.id
-      ORDER BY t.disc_number, t.track_number, t.name
-    `)
+    if (albums.length === 0) {
+      return NextResponse.json({ metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' }, albums: [] })
+    }
+
+    // Fetch all songs for these albums in one query to avoid N+1 HTTP calls
+    const albumIds = albums.map(a => a.albumId)
+    const placeholders = albumIds.map(() => '?').join(', ')
+    const { rows: songRows } = await db.execute({
+      sql: `
+        SELECT
+          t.album_id,
+          t.id,
+          t.spotify_id as songId,
+          t.name,
+          t.duration_ms,
+          t.track_number,
+          t.disc_number,
+          a.name as artistName,
+          COUNT(le.id) as playCount,
+          SUM(le.ms_played) as totalListeningTimeMs
+        FROM tracks t
+        JOIN artists a ON a.id = t.artist_id
+        LEFT JOIN listening_events le ON le.track_id = t.id
+        WHERE t.album_id IN (${placeholders})
+        GROUP BY t.id
+        ORDER BY t.album_id, t.disc_number, t.track_number, t.name
+      `,
+      args: albumIds,
+    })
+
+    type SongRow = {
+      album_id: number; id: number; songId: string | null; name: string;
+      duration_ms: number; track_number: number | null; disc_number: number | null;
+      artistName: string; playCount: number; totalListeningTimeMs: number;
+    }
+    const songs = songRows as unknown as SongRow[]
+
+    // Group songs by album_id
+    const songsByAlbum = new Map<number, SongRow[]>()
+    for (const song of songs) {
+      const list = songsByAlbum.get(song.album_id) ?? []
+      list.push(song)
+      songsByAlbum.set(song.album_id, list)
+    }
 
     const result = albums.map((al, i) => {
-      const songs = getSongsForAlbum.all(al.albumId) as Array<{
-        id: number; songId: string | null; name: string; duration_ms: number;
-        track_number: number | null; disc_number: number | null;
-        artistName: string; playCount: number; totalListeningTimeMs: number;
-      }>
-
-      const totalSongs = al.total_tracks || songs.length
-      const playedSongs = songs.filter(s => s.playCount > 0).length
+      const albumSongs = songsByAlbum.get(al.albumId) ?? []
+      const totalSongs = al.total_tracks || albumSongs.length
+      const playedSongs = albumSongs.filter(s => s.playCount > 0).length
 
       return {
         rank: i + 1,
@@ -88,7 +115,7 @@ export async function GET() {
         played_songs: playedSongs,
         unplayed_songs: totalSongs - playedSongs,
         earliest_played_at: al.earliestPlayedAt || undefined,
-        songs: songs.map(s => ({
+        songs: albumSongs.map(s => ({
           songId: s.songId || String(s.id),
           name: s.name,
           duration_ms: s.duration_ms,
@@ -107,10 +134,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      metadata: {
-        timestamp: new Date().toISOString(),
-        source: 'SQLite Database',
-      },
+      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
       albums: result,
     })
   } catch (error) {

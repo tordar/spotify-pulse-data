@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const db = getDb()
 
-    const songs = db.prepare(`
+    const { rows } = await db.execute(`
       SELECT
         t.spotify_id as songId,
         t.name as trackName,
@@ -24,9 +24,11 @@ export async function GET() {
       HAVING playCount > 0
       ORDER BY playCount DESC
       LIMIT 500
-    `).all() as Array<{
+    `)
+
+    const songs = rows as unknown as Array<{
       songId: string | null; trackName: string; duration_ms: number;
-      artistName: string; artistGenres: string;
+      artistName: string; artistGenres: string | null;
       albumName: string; albumImageUrl: string | null;
       playCount: number; totalDurationMs: number;
     }>
@@ -56,10 +58,7 @@ export async function GET() {
     }))
 
     return NextResponse.json({
-      metadata: {
-        timestamp: new Date().toISOString(),
-        source: 'SQLite Database',
-      },
+      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
       songs: result,
     })
   } catch (error) {
@@ -68,7 +67,7 @@ export async function GET() {
   }
 }
 
-function safeParseJson(val: string | null): string[] {
+function safeParseJson(val: string | null | undefined): string[] {
   if (!val) return []
   try { return JSON.parse(val) } catch { return [] }
 }

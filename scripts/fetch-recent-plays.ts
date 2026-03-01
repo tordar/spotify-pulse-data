@@ -11,6 +11,7 @@ import {
   insertListeningEvent,
   logImport,
 } from './db/database';
+import { createClient, type Client } from '@libsql/client';
 
 interface SpotifyTrack {
   id: string;
@@ -49,6 +50,12 @@ interface SpotifyRecentPlaysResponse {
   };
   limit: number;
   href: string;
+}
+
+function getTursoClient(): Client | null {
+  const url = process.env.TURSO_DATABASE_URL?.trim();
+  if (!url) return null;
+  return createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() });
 }
 
 class SpotifyRecentPlaysFetcher {
@@ -192,6 +199,73 @@ class SpotifyRecentPlaysFetcher {
     return inserted;
   }
 
+  async syncPlaysToTurso(plays: SpotifyPlay[]): Promise<void> {
+    const turso = getTursoClient();
+    if (!turso) {
+      console.log('TURSO_DATABASE_URL not set — skipping Turso sync');
+      return;
+    }
+
+    console.log(`Syncing ${plays.length} plays to Turso...`);
+
+    for (const play of plays) {
+      const track = play.track;
+      const primaryArtist = track.artists[0]?.name || 'Unknown Artist';
+      const albumName = track.album?.name || 'Unknown Album';
+      const albumImageUrl = track.album?.images?.[0]?.url || null;
+
+      // Upsert artist
+      const artistResult = await turso.execute({
+        sql: `INSERT INTO artists (name, spotify_id, genres, image_url)
+              VALUES (?, ?, '[]', ?)
+              ON CONFLICT(name) DO UPDATE SET
+                spotify_id = COALESCE(excluded.spotify_id, spotify_id),
+                image_url  = COALESCE(excluded.image_url, image_url),
+                updated_at = datetime('now')
+              RETURNING id`,
+        args: [primaryArtist, track.artists[0]?.id ?? null, albumImageUrl],
+      });
+      const artistId = Number(artistResult.rows[0]?.id);
+
+      // Upsert album
+      const albumResult = await turso.execute({
+        sql: `INSERT INTO albums (name, artist_name, spotify_id, image_url)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(name, artist_name) DO UPDATE SET
+                spotify_id = COALESCE(excluded.spotify_id, spotify_id),
+                image_url  = COALESCE(excluded.image_url, image_url),
+                updated_at = datetime('now')
+              RETURNING id`,
+        args: [albumName, primaryArtist, track.album?.id ?? null, albumImageUrl],
+      });
+      const albumId = Number(albumResult.rows[0]?.id);
+
+      // Upsert track
+      const trackResult = await turso.execute({
+        sql: `INSERT INTO tracks (name, album_id, artist_id, duration_ms, spotify_id)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(spotify_id) WHERE spotify_id IS NOT NULL DO UPDATE SET
+                name       = excluded.name,
+                album_id   = excluded.album_id,
+                artist_id  = excluded.artist_id,
+                duration_ms = excluded.duration_ms,
+                updated_at = datetime('now')
+              RETURNING id`,
+        args: [track.name, albumId, artistId, track.duration_ms, track.id ?? null],
+      });
+      const trackId = Number(trackResult.rows[0]?.id);
+
+      // Insert listening event (ignore duplicates)
+      await turso.execute({
+        sql: `INSERT OR IGNORE INTO listening_events (track_id, played_at, ms_played, source)
+              VALUES (?, ?, ?, 'spotify')`,
+        args: [trackId, play.played_at, track.duration_ms],
+      });
+    }
+
+    console.log(`Turso sync complete.`);
+  }
+
   private writeFetchResult(hasNewTracks: boolean): void {
     const tempDir = 'temp';
     if (!fs.existsSync(tempDir)) {
@@ -217,6 +291,13 @@ class SpotifyRecentPlaysFetcher {
       }
       const plays = await this.fetchRecentPlays();
       const inserted = this.insertPlaysIntoDb(plays);
+
+      // Mirror new plays to Turso so the Vercel web app sees them immediately
+      if (inserted > 0) {
+        const newPlays = plays.slice(0, inserted); // newest plays are first
+        await this.syncPlaysToTurso(newPlays);
+      }
+
       this.writeFetchResult(inserted > 0);
       console.log('Recent plays fetch completed successfully!');
       return inserted;

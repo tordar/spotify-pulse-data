@@ -72,6 +72,13 @@ jobs:
           npm run add-podcast-data
           npm run db:enrich
 
+      - name: Sync rebuilt database to Turso
+        if: steps.check-files.outputs.files_exist == 'true'
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npm run db:sync-turso
+
       - name: Pull latest changes
         if: steps.check-files.outputs.files_exist == 'true' && github.event_name == 'push'
         run: |
