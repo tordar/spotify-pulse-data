@@ -10,7 +10,13 @@ export async function GET(request: Request) {
     if (!q.trim()) return NextResponse.json({ tracks: [] })
 
     const db = getDb()
-    const like = `%${q}%`
+
+    // Split into tokens so "candidate bowie" matches track="Candidate" + artist="Bowie"
+    const tokens = q.trim().split(/\s+/).filter(Boolean)
+    const tokenClauses = tokens
+      .map(() => `(t.name LIKE ? OR a.name LIKE ? OR al.name LIKE ?)`)
+      .join(' AND ')
+    const tokenArgs = tokens.flatMap(tok => [`%${tok}%`, `%${tok}%`, `%${tok}%`])
 
     const { rows } = await db.execute({
       sql: `
@@ -25,13 +31,13 @@ export async function GET(request: Request) {
         JOIN artists a ON a.id = t.artist_id
         JOIN albums al ON al.id = t.album_id
         LEFT JOIN listening_events le ON le.track_id = t.id
-        WHERE (t.name LIKE ? OR a.name LIKE ? OR al.name LIKE ?)
+        WHERE ${tokenClauses}
         GROUP BY t.id
         HAVING playCount > 0
         ORDER BY playCount DESC
         LIMIT 30
       `,
-      args: [like, like, like],
+      args: tokenArgs,
     })
 
     type Row = {

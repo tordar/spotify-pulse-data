@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS albums (
   album_type      TEXT,
   image_url       TEXT,
   total_tracks    INTEGER,
+  queue_status    TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
