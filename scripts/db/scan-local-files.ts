@@ -32,11 +32,14 @@ function normalize(s: string): string {
     .trim();
 }
 
+function stripTrackNumber(s: string): string {
+  // Strip leading track number patterns: "01 ", "01. ", "01 - ", "01_"
+  return s.replace(/^\d{1,3}[\s.\-_]+/, '').trim();
+}
+
 function titleFromFilename(filename: string): string {
-  let name = path.basename(filename, path.extname(filename));
-  // Strip leading track number patterns: "01 ", "01. ", "01 - "
-  name = name.replace(/^\d+[\s.\-_]+/, '');
-  return name.trim();
+  const name = path.basename(filename, path.extname(filename));
+  return stripTrackNumber(name);
 }
 
 function walkDir(dir: string): string[] {
@@ -295,7 +298,8 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
         const meta: IAudioMetadata = await parseFile(filePath, { skipCovers: true, duration: true }) as any;
         const common = meta.common;
         const artist = common?.artist || common?.albumartist || '';
-        const title = common?.title || '';
+        // Strip track numbers from metadata titles — some taggers embed "01 Song Name"
+        const title = common?.title ? stripTrackNumber(common.title) : '';
         const album = common?.album || '';
         const durationMs = meta.format?.duration ? Math.round(meta.format.duration * 1000) : 0;
 

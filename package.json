@@ -18,6 +18,7 @@
     "db:enrich": "tsx scripts/db/enrich-from-cleaned.ts",
     "db:fetch-listenbrainz": "tsx scripts/db/fetch-listenbrainz.ts",
     "db:sync-turso": "tsx scripts/db/sync-to-turso.ts",
+    "db:fix-track-numbers": "tsx scripts/db/fix-catalog-track-numbers.ts",
     "web:dev": "cd web-app && npm run dev",
     "web:build": "cd web-app && npm run build",
     "web:start": "cd web-app && npm run start"
