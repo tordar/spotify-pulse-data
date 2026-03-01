@@ -6,6 +6,7 @@
  * Requires: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars
  */
 
+import 'dotenv/config';
 import Database from 'better-sqlite3';
 import { createClient } from '@libsql/client';
 import * as path from 'path';
@@ -31,6 +32,26 @@ async function main() {
   const local = new Database(DB_PATH, { readonly: true });
   const turso = createClient({ url, authToken });
 
+  console.log('Applying schema to Turso…');
+
+  // Apply schema — split on semicolons, strip SQL comments, skip PRAGMA statements
+  const schemaPath = path.join(__dirname, 'schema.sql');
+  const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
+  const schemaStatements = schemaSql
+    .split(';')
+    .map(s =>
+      s.split('\n')
+        .filter(line => !line.trimStart().startsWith('--'))
+        .join('\n')
+        .trim()
+    )
+    .filter(s => s.length > 0 && !s.toUpperCase().startsWith('PRAGMA'));
+
+  for (const stmt of schemaStatements) {
+    await turso.execute(stmt);
+  }
+
+  console.log('Schema applied.');
   console.log('Starting full sync from library.db → Turso…');
 
   // Clear in reverse FK order
