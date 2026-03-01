@@ -36,8 +36,11 @@ export function getDb(): Database.Database {
     throw new Error(`Database not found at ${dbPath}. Run 'npm run db:import' first.`)
   }
 
-  _db = new Database(dbPath, { readonly: true })
-  _db.pragma('journal_mode = WAL')
+  // readonly + fileMustExist: no write operations needed.
+  // Do NOT set journal_mode pragmas — doing so on a read-only connection tries to
+  // write lock/WAL files and throws "unable to open database file" on Vercel's
+  // read-only /var/task filesystem.
+  _db = new Database(dbPath, { readonly: true, fileMustExist: true })
   return _db
 }
 
