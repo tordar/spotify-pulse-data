@@ -1,169 +1,175 @@
 import { NextResponse } from 'next/server'
-import { readdir, readFile } from 'fs/promises'
-import { join } from 'path'
-import { getCleanedDataDir } from '@/lib/data-dir'
-import { getRecentlyPlayed, type PlayHistoryItem } from '@/lib/spotify-recently-played'
+import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
 const MS_PER_HOUR = 60 * 60 * 1000
 const MS_PER_DAY = 24 * MS_PER_HOUR
 
-function norm(s: string): string {
-  return s.toLowerCase().trim()
-}
-
-function toImage(img: { url: string; height?: number | null; width?: number | null }): { height: number; url: string; width: number } {
-  return { url: img.url, height: img.height ?? 0, width: img.width ?? 0 }
-}
-
-function mergeRecentlyPlayedIntoYearTopItems(
-  yearTopItems: {
-    topSongs: Array<{ songId: string; name: string; artist: string; playCount: number; totalListeningTimeMs: number; images: Array<{ height: number; url: string; width: number }> }>
-    topArtists: Array<{ artistName: string; playCount: number; totalListeningTimeMs: number; uniqueSongs: number; images: Array<{ height: number; url: string; width: number }> }>
-    topAlbums: Array<{ albumName: string; artist: string; playCount: number; totalListeningTimeMs: number; uniqueSongs: number; images: Array<{ height: number; url: string; width: number }> }>
-  },
-  plays: PlayHistoryItem[]
-): void {
-  for (const item of plays) {
-    const track = item.track
-    const durationMs = track.duration_ms ?? 0
-    const primaryArtist = track.artists?.[0]?.name ?? ''
-    const albumName = track.album?.name ?? ''
-    const images = (track.album?.images ?? []).map(toImage)
-
-    const songId = track.id
-    if (songId) {
-      const existing = yearTopItems.topSongs.find((s) => s.songId === songId)
-      if (existing) {
-        existing.playCount += 1
-        existing.totalListeningTimeMs += durationMs
-      } else {
-        yearTopItems.topSongs.push({
-          songId,
-          name: track.name ?? '',
-          artist: primaryArtist,
-          playCount: 1,
-          totalListeningTimeMs: durationMs,
-          images,
-        })
-      }
-    }
-
-    if (primaryArtist) {
-      const existing = yearTopItems.topArtists.find((a) => norm(a.artistName) === norm(primaryArtist))
-      if (existing) {
-        existing.playCount += 1
-        existing.totalListeningTimeMs += durationMs
-      } else {
-        yearTopItems.topArtists.push({
-          artistName: primaryArtist,
-          playCount: 1,
-          totalListeningTimeMs: durationMs,
-          uniqueSongs: 1,
-          images: [], // Recently played track doesn't include artist images
-        })
-      }
-    }
-
-    if (albumName && primaryArtist) {
-      const existing = yearTopItems.topAlbums.find(
-        (a) => norm(a.albumName) === norm(albumName) && norm(a.artist) === norm(primaryArtist)
-      )
-      if (existing) {
-        existing.playCount += 1
-        existing.totalListeningTimeMs += durationMs
-      } else {
-        yearTopItems.topAlbums.push({
-          albumName,
-          artist: primaryArtist,
-          playCount: 1,
-          totalListeningTimeMs: durationMs,
-          uniqueSongs: 1,
-          images,
-        })
-      }
-    }
-  }
-
-  yearTopItems.topSongs.sort((a, b) => b.playCount - a.playCount)
-  yearTopItems.topArtists.sort((a, b) => b.playCount - a.playCount)
-  yearTopItems.topAlbums.sort((a, b) => b.playCount - a.playCount)
-
-  yearTopItems.topSongs.splice(5)
-  yearTopItems.topArtists.splice(5)
-  yearTopItems.topAlbums.splice(5)
-}
-
 export async function GET() {
   try {
-    const dataDir = getCleanedDataDir()
-    const files = await readdir(dataDir)
-    const statsFile = files
-      .filter(f => f.startsWith('detailed-stats-') && f.endsWith('.json'))
-      .sort()
-      .pop()
+    const db = getDb()
 
-    if (!statsFile) {
-      return NextResponse.json({ error: 'Stats data not found' }, { status: 404 })
-    }
+    // Yearly listening time
+    const yearlyRows = db.prepare(`
+      SELECT
+        strftime('%Y', played_at) as year,
+        SUM(ms_played) as totalListeningTimeMs,
+        COUNT(*) as playCount
+      FROM listening_events
+      GROUP BY year ORDER BY year
+    `).all() as Array<{ year: string; totalListeningTimeMs: number; playCount: number }>
 
-    const filePath = join(dataDir, statsFile)
-    const fileContents = await readFile(filePath, 'utf-8')
-    const data = JSON.parse(fileContents)
+    const yearlyListeningTime = yearlyRows.map(r => ({
+      year: r.year,
+      totalListeningTimeMs: r.totalListeningTimeMs,
+      totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
+      playCount: r.playCount,
+      totalPodcastListeningTimeMs: 0,
+      totalPodcastListeningHours: 0,
+    }))
 
-    const recentPlays = (await getRecentlyPlayed(50)) ?? []
-    const lastSyncAt = data.metadata?.timestamp ? new Date(data.metadata.timestamp).getTime() : null
-    const playsToAppend =
-      lastSyncAt != null
-        ? recentPlays.filter((item) => new Date(item.played_at).getTime() > lastSyncAt)
-        : recentPlays
+    // Total stats
+    const totals = db.prepare(`
+      SELECT SUM(ms_played) as totalMs, COUNT(*) as totalEvents
+      FROM listening_events
+    `).get() as { totalMs: number; totalEvents: number }
 
-    if (playsToAppend.length > 0 && data.stats?.yearlyListeningTime) {
-      const currentYear = new Date().getFullYear().toString()
-      const yearEntry = data.stats.yearlyListeningTime.find(
-        (y: { year: string }) => y.year === currentYear
-      )
-      if (yearEntry) {
-        playsToAppend.forEach((item) => {
-          const artists = item.track.artists?.map((a: { name: string }) => a.name).join(', ') ?? ''
-          console.log('[stats] Appended:', item.track.name, '—', artists)
-        })
-        const extraMs = playsToAppend.reduce((sum, item) => sum + (item.track.duration_ms ?? 0), 0)
-        const extraPlays = playsToAppend.length
-        const extraHours = extraMs / MS_PER_HOUR
-        const extraDays = extraMs / MS_PER_DAY
+    const totalListeningHours = Math.round((totals.totalMs / MS_PER_HOUR) * 100) / 100
+    const totalListeningDays = Math.round((totals.totalMs / MS_PER_DAY) * 100) / 100
 
-        yearEntry.totalListeningTimeMs = (yearEntry.totalListeningTimeMs ?? 0) + extraMs
-        yearEntry.playCount = (yearEntry.playCount ?? 0) + extraPlays
-        yearEntry.totalListeningHours = (yearEntry.totalListeningHours ?? 0) + extraHours
+    // Yearly top items (top 5 songs, artists, albums per year)
+    const years = yearlyRows.map(r => r.year)
+    const yearlyTopItems = years.map(year => {
+      const topSongs = db.prepare(`
+        SELECT t.spotify_id as songId, t.name, a.name as artist, al.image_url,
+               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs
+        FROM listening_events le
+        JOIN tracks t ON t.id = le.track_id
+        JOIN artists a ON a.id = t.artist_id
+        JOIN albums al ON al.id = t.album_id
+        WHERE strftime('%Y', le.played_at) = ?
+        GROUP BY t.id ORDER BY playCount DESC LIMIT 5
+      `).all(year) as Array<{
+        songId: string; name: string; artist: string; image_url: string | null;
+        playCount: number; totalListeningTimeMs: number;
+      }>
 
-        if (typeof data.stats.totalListeningHours === 'number') {
-          data.stats.totalListeningHours += extraHours
-        }
-        if (typeof data.stats.totalListeningDays === 'number') {
-          data.stats.totalListeningDays += extraDays
-        }
-        if (typeof data.stats.totalListeningEvents === 'number') {
-          data.stats.totalListeningEvents += extraPlays
-        }
+      const topArtists = db.prepare(`
+        SELECT a.name as artistName, a.image_url,
+               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
+               COUNT(DISTINCT t.id) as uniqueSongs
+        FROM listening_events le
+        JOIN tracks t ON t.id = le.track_id
+        JOIN artists a ON a.id = t.artist_id
+        WHERE strftime('%Y', le.played_at) = ?
+        GROUP BY a.id ORDER BY playCount DESC LIMIT 5
+      `).all(year) as Array<{
+        artistName: string; image_url: string | null;
+        playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
+      }>
+
+      const topAlbums = db.prepare(`
+        SELECT al.name as albumName, a.name as artist, al.image_url,
+               COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs,
+               COUNT(DISTINCT t.id) as uniqueSongs
+        FROM listening_events le
+        JOIN tracks t ON t.id = le.track_id
+        JOIN artists a ON a.id = t.artist_id
+        JOIN albums al ON al.id = t.album_id
+        WHERE strftime('%Y', le.played_at) = ?
+        GROUP BY al.id ORDER BY playCount DESC LIMIT 5
+      `).all(year) as Array<{
+        albumName: string; artist: string; image_url: string | null;
+        playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
+      }>
+
+      return {
+        year: parseInt(year),
+        topSongs: topSongs.map(s => ({
+          songId: s.songId || '',
+          name: s.name,
+          artist: s.artist,
+          playCount: s.playCount,
+          totalListeningTimeMs: s.totalListeningTimeMs,
+          images: buildSpotifyImageArray(s.image_url),
+        })),
+        topArtists: topArtists.map(a => ({
+          artistName: a.artistName,
+          playCount: a.playCount,
+          totalListeningTimeMs: a.totalListeningTimeMs,
+          uniqueSongs: a.uniqueSongs,
+          images: a.image_url ? [{ url: a.image_url, width: 640, height: 640 }] : [],
+        })),
+        topAlbums: topAlbums.map(a => ({
+          albumName: a.albumName,
+          artist: a.artist,
+          playCount: a.playCount,
+          totalListeningTimeMs: a.totalListeningTimeMs,
+          uniqueSongs: a.uniqueSongs,
+          images: buildSpotifyImageArray(a.image_url),
+        })),
       }
+    })
 
-      if (data.stats?.yearlyTopItems && playsToAppend.length > 0) {
-        const yearTopEntry = data.stats.yearlyTopItems.find(
-          (y: { year: string }) => y.year === currentYear
-        )
-        if (yearTopEntry) {
-          mergeRecentlyPlayedIntoYearTopItems(yearTopEntry, playsToAppend)
-        }
+    // Hourly listening distribution
+    const hourlyRows = db.prepare(`
+      SELECT
+        CAST(strftime('%H', played_at) AS INTEGER) as hour,
+        SUM(ms_played) as totalListeningTimeMs,
+        COUNT(*) as playCount
+      FROM listening_events
+      GROUP BY hour ORDER BY hour
+    `).all() as Array<{ hour: number; totalListeningTimeMs: number; playCount: number }>
+
+    const hourlyListeningDistribution = Array.from({ length: 24 }, (_, h) => {
+      const row = hourlyRows.find(r => r.hour === h)
+      return {
+        hour: h,
+        totalListeningTimeMs: row?.totalListeningTimeMs ?? 0,
+        totalListeningHours: Math.round(((row?.totalListeningTimeMs ?? 0) / MS_PER_HOUR) * 100) / 100,
+        playCount: row?.playCount ?? 0,
       }
+    })
 
-      if (data.metadata) {
-        data.metadata.recentlyPlayedMergedAt = new Date().toISOString()
-      }
-    } else if (recentPlays && recentPlays.length > 0 && playsToAppend.length === 0 && data.metadata) {
-      data.metadata.recentlyPlayedMergedAt = new Date().toISOString()
-    }
+    // Country listening data
+    const countryRows = db.prepare(`
+      SELECT
+        conn_country as countryCode,
+        SUM(ms_played) as totalMsPlayed,
+        COUNT(*) as playCount,
+        MIN(played_at) as firstPlayedAt,
+        MAX(played_at) as lastPlayedAt
+      FROM listening_events
+      WHERE conn_country IS NOT NULL AND conn_country != ''
+      GROUP BY conn_country ORDER BY totalMsPlayed DESC
+    `).all() as Array<{
+      countryCode: string; totalMsPlayed: number; playCount: number;
+      firstPlayedAt: string; lastPlayedAt: string;
+    }>
 
-    return NextResponse.json(data)
+    const countryListeningData = countryRows.map(r => ({
+      countryCode: r.countryCode,
+      totalMsPlayed: r.totalMsPlayed,
+      totalHours: Math.round((r.totalMsPlayed / MS_PER_HOUR) * 100) / 100,
+      playCount: r.playCount,
+      firstPlayedAt: r.firstPlayedAt,
+      lastPlayedAt: r.lastPlayedAt,
+    }))
+
+    return NextResponse.json({
+      metadata: {
+        timestamp: new Date().toISOString(),
+        source: 'SQLite Database',
+      },
+      stats: {
+        yearlyListeningTime,
+        yearlyTopItems,
+        totalListeningHours,
+        totalListeningDays,
+        totalListeningEvents: totals.totalEvents,
+        hourlyListeningDistribution,
+        countryListeningData,
+      },
+    })
   } catch (error) {
     console.error('Error reading stats data:', error)
     return NextResponse.json({ error: 'Failed to load stats data' }, { status: 500 })

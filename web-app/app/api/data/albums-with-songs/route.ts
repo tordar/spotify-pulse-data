@@ -1,164 +1,118 @@
 import { NextResponse } from 'next/server'
-import { readdir, readFile } from 'fs/promises'
-import { existsSync } from 'fs'
-import { join } from 'path'
-import { getCleanedDataDir } from '@/lib/data-dir'
-import { getRecentlyPlayed } from '@/lib/spotify-recently-played'
-
-type AlbumWithName = {
-  primaryAlbumId?: string
-  album?: { name?: string; artists?: string[] }
-  count?: number
-  total_count?: number
-  total_duration_ms?: number
-  songs?: Array<{ songId?: string; play_count?: number; total_listening_time_ms?: number }>
-}
-
-/** Normalize dash variants to standard hyphen (matches scripts/cleaner) */
-function normalizeDashes(text: string): string {
-  return text
-    .replace(/\u2013/g, '-')
-    .replace(/\u2014/g, '-')
-    .replace(/\u2015/g, '-')
-    .replace(/\u2212/g, '-')
-    .replace(/\uFE63/g, '-')
-    .replace(/\uFF0D/g, '-')
-}
-
-function normalizeAlbumKey(s: string): string {
-  return normalizeDashes(s.toLowerCase().trim())
-}
-
-function getRulesPath(): string | null {
-  const fromWebApp = join(process.cwd(), '..', 'data', 'album-consolidation-rules.json')
-  const fromRepoRoot = join(process.cwd(), 'data', 'album-consolidation-rules.json')
-  if (existsSync(fromWebApp)) return fromWebApp
-  if (existsSync(fromRepoRoot)) return fromRepoRoot
-  return null
-}
-
-let rulesMap: Map<string, string> | null = null
-
-async function loadRulesMap(): Promise<Map<string, string>> {
-  if (rulesMap) return rulesMap
-  rulesMap = new Map()
-  const path = getRulesPath()
-  if (!path) return rulesMap
-  try {
-    const content = await readFile(path, 'utf-8')
-    const data = JSON.parse(content) as { rules: Array<{ artistName: string; baseAlbumName: string; variations: string[] }> }
-    if (!Array.isArray(data.rules)) return rulesMap
-    for (const rule of data.rules) {
-      const artistKey = normalizeAlbumKey(rule.artistName)
-      const baseAlbumName = rule.baseAlbumName
-      rulesMap.set(`${artistKey}|${normalizeAlbumKey(baseAlbumName)}`, baseAlbumName)
-      for (const variation of rule.variations) {
-        rulesMap.set(`${artistKey}|${normalizeAlbumKey(variation)}`, baseAlbumName)
-      }
-    }
-  } catch {
-    // no rules or parse error
-  }
-  return rulesMap
-}
-
-async function getCanonicalAlbumName(albumName: string, artistName: string): Promise<string> {
-  const map = await loadRulesMap()
-  const key = `${normalizeAlbumKey(artistName)}|${normalizeAlbumKey(albumName)}`
-  return map.get(key) ?? albumName
-}
-
-function findAlbumByNameAndArtist(
-  albums: AlbumWithName[],
-  canonicalAlbumName: string,
-  primaryArtistName: string
-): AlbumWithName | undefined {
-  const canonicalKey = normalizeAlbumKey(canonicalAlbumName)
-  const artistKey = normalizeAlbumKey(primaryArtistName)
-  return albums.find((a) => {
-    const nameMatch = a.album?.name && normalizeAlbumKey(a.album.name) === canonicalKey
-    const artistMatch = Array.isArray(a.album?.artists) &&
-      a.album.artists.some((ar) => normalizeAlbumKey(ar) === artistKey)
-    return nameMatch && artistMatch
-  })
-}
+import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
 export async function GET() {
   try {
-    const dataDir = getCleanedDataDir()
-    const files = await readdir(dataDir)
-    const albumFile = files
-      .filter(f => f.startsWith('cleaned-albums-with-songs-') && f.endsWith('.json'))
-      .sort()
-      .pop()
+    const db = getDb()
 
-    if (!albumFile) {
-      return NextResponse.json({ error: 'Album with songs data not found' }, { status: 404 })
-    }
+    // Top 500 albums by play count
+    const albums = db.prepare(`
+      SELECT
+        al.id as albumId,
+        al.name as albumName,
+        al.artist_name as artistName,
+        al.spotify_id as spotifyId,
+        al.image_url,
+        al.release_date,
+        al.album_type,
+        al.total_tracks,
+        COUNT(le.id) as playCount,
+        SUM(le.ms_played) as totalDurationMs,
+        COUNT(DISTINCT t.id) as uniqueSongs,
+        MIN(le.played_at) as earliestPlayedAt
+      FROM albums al
+      JOIN tracks t ON t.album_id = al.id
+      LEFT JOIN listening_events le ON le.track_id = t.id
+      GROUP BY al.id
+      HAVING playCount > 0
+      ORDER BY playCount DESC
+      LIMIT 500
+    `).all() as Array<{
+      albumId: number; albumName: string; artistName: string;
+      spotifyId: string | null; image_url: string | null;
+      release_date: string | null; album_type: string | null;
+      total_tracks: number | null;
+      playCount: number; totalDurationMs: number; uniqueSongs: number;
+      earliestPlayedAt: string | null;
+    }>
 
-    const filePath = join(dataDir, albumFile)
-    const fileContents = await readFile(filePath, 'utf-8')
-    const data = JSON.parse(fileContents)
+    const getSongsForAlbum = db.prepare(`
+      SELECT
+        t.id, t.spotify_id as songId, t.name, t.duration_ms,
+        t.track_number, t.disc_number,
+        a.name as artistName,
+        COUNT(le.id) as playCount,
+        SUM(le.ms_played) as totalListeningTimeMs
+      FROM tracks t
+      JOIN artists a ON a.id = t.artist_id
+      LEFT JOIN listening_events le ON le.track_id = t.id
+      WHERE t.album_id = ?
+      GROUP BY t.id
+      ORDER BY t.disc_number, t.track_number, t.name
+    `)
 
-    const recentPlays = await getRecentlyPlayed(50) ?? []
-    const lastSyncAt = data.metadata?.timestamp ? new Date(data.metadata.timestamp).getTime() : null
-    const playsToAppend =
-      lastSyncAt != null
-        ? recentPlays.filter((item) => new Date(item.played_at).getTime() > lastSyncAt)
-        : recentPlays
+    const result = albums.map((al, i) => {
+      const songs = getSongsForAlbum.all(al.albumId) as Array<{
+        id: number; songId: string | null; name: string; duration_ms: number;
+        track_number: number | null; disc_number: number | null;
+        artistName: string; playCount: number; totalListeningTimeMs: number;
+      }>
 
-    if (playsToAppend.length > 0 && data.albums) {
-      const albums = data.albums as AlbumWithName[]
-      for (const item of playsToAppend) {
-        const albumId = item.track.album?.id
-        const trackId = item.track.id
-        const artists = item.track.artists?.map((a: { name: string }) => a.name).join(', ') ?? ''
-        const albumName = item.track.album?.name ?? ''
-        const primaryArtistName = item.track.artists?.[0]?.name ?? ''
+      const totalSongs = al.total_tracks || songs.length
+      const playedSongs = songs.filter(s => s.playCount > 0).length
 
-        if (!trackId) {
-          console.log('[albums-with-songs] Not appended (missing track id):', item.track.name, '—', artists, '(', albumName, ')')
-          continue
-        }
-
-        let album = albumId
-          ? albums.find((a: { primaryAlbumId?: string }) => a.primaryAlbumId === albumId)
-          : undefined
-
-        if (!album && albumName && primaryArtistName) {
-          const canonicalName = await getCanonicalAlbumName(albumName, primaryArtistName)
-          album = findAlbumByNameAndArtist(albums, canonicalName, primaryArtistName)
-        }
-
-        if (!album) {
-          console.log('[albums-with-songs] Not appended (album not in top 500):', item.track.name, '—', artists, '(', albumName, ')')
-          continue
-        }
-
-        console.log('[albums-with-songs] Appended:', item.track.name, '—', artists, '(', albumName, ')')
-
-        album.count = (album.count ?? 0) + 1
-        album.total_count = (album.total_count ?? 0) + 1
-        album.total_duration_ms = (album.total_duration_ms ?? 0) + (item.track.duration_ms ?? 0)
-
-        if (Array.isArray(album.songs)) {
-          const song = album.songs.find((s: { songId?: string }) => s.songId === trackId)
-          if (song) {
-            song.play_count = (song.play_count ?? 0) + 1
-            song.total_listening_time_ms = (song.total_listening_time_ms ?? 0) + (item.track.duration_ms ?? 0)
-          }
-        }
+      return {
+        rank: i + 1,
+        duration_ms: al.totalDurationMs,
+        count: al.playCount,
+        differents: al.uniqueSongs,
+        primaryAlbumId: al.spotifyId || String(al.albumId),
+        total_count: al.playCount,
+        total_duration_ms: al.totalDurationMs,
+        album: {
+          name: al.albumName,
+          album_type: al.album_type || '',
+          artists: [al.artistName],
+          release_date: al.release_date || '',
+          release_date_precision: al.release_date ? 'day' : '',
+          popularity: 0,
+          images: buildSpotifyImageArray(al.image_url),
+          external_urls: al.spotifyId
+            ? { spotify: `https://open.spotify.com/album/${al.spotifyId}` }
+            : {},
+          genres: [],
+        },
+        consolidated_count: al.playCount,
+        original_albumIds: al.spotifyId ? [al.spotifyId] : [],
+        total_songs: totalSongs,
+        played_songs: playedSongs,
+        unplayed_songs: totalSongs - playedSongs,
+        earliest_played_at: al.earliestPlayedAt || undefined,
+        songs: songs.map(s => ({
+          songId: s.songId || String(s.id),
+          name: s.name,
+          duration_ms: s.duration_ms,
+          track_number: s.track_number || 0,
+          disc_number: s.disc_number || 1,
+          explicit: false,
+          preview_url: null,
+          external_urls: s.songId
+            ? { spotify: `https://open.spotify.com/track/${s.songId}` }
+            : {},
+          play_count: s.playCount,
+          total_listening_time_ms: s.totalListeningTimeMs || 0,
+          artists: [s.artistName],
+        })),
       }
-      if (data.metadata) {
-        data.metadata.recentlyPlayedMergedAt = new Date().toISOString()
-      }
-    } else if (recentPlays && recentPlays.length > 0 && playsToAppend.length === 0) {
-      if (data.metadata) {
-        data.metadata.recentlyPlayedMergedAt = new Date().toISOString()
-      }
-    }
+    })
 
-    return NextResponse.json(data)
+    return NextResponse.json({
+      metadata: {
+        timestamp: new Date().toISOString(),
+        source: 'SQLite Database',
+      },
+      albums: result,
+    })
   } catch (error) {
     console.error('Error reading album with songs data:', error)
     return NextResponse.json({ error: 'Failed to load album with songs data' }, { status: 500 })

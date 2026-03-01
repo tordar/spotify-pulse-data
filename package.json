@@ -12,6 +12,11 @@
     "create-metadata": "tsx scripts/create-metadata.ts",
     "setup-spotify-auth": "tsx scripts/setup-spotify-auth.ts",
     "test-spotify-api": "tsx scripts/test-spotify-api.ts",
+    "db:import": "tsx scripts/db/import-history-to-db.ts",
+    "db:generate-csv": "tsx scripts/db/generate-sldl-csv.ts",
+    "db:scan-files": "tsx scripts/db/scan-local-files.ts",
+    "db:enrich": "tsx scripts/db/enrich-from-cleaned.ts",
+    "db:fetch-listenbrainz": "tsx scripts/db/fetch-listenbrainz.ts",
     "web:dev": "cd web-app && npm run dev",
     "web:build": "cd web-app && npm run build",
     "web:start": "cd web-app && npm run start"
@@ -31,13 +36,16 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/cli-progress": "^3.11.6",
     "@types/commander": "^2.12.0",
     "axios": "^1.12.2",
+    "better-sqlite3": "^12.6.2",
     "cli-progress": "^3.12.0",
     "commander": "^11.1.0",
     "dotenv": "^16.0.0",
-    "glob": "^10.3.10"
+    "glob": "^10.3.10",
+    "music-metadata": "^11.12.1"
   },
   "engines": {
     "node": ">=20.0.0"

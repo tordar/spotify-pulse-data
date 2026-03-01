@@ -1,29 +1,57 @@
 import { NextResponse } from 'next/server'
-import { readdir, readFile } from 'fs/promises'
-import { join } from 'path'
-import { getCleanedDataDir } from '@/lib/data-dir'
+import { getDb } from '@/lib/db'
 
 export async function GET() {
   try {
-    const dataDir = getCleanedDataDir()
-    const files = await readdir(dataDir)
-    const genresFile = files
-      .filter(f => f.startsWith('all-artists-genres-') && f.endsWith('.json'))
-      .sort()
-      .pop()
-    
-    if (!genresFile) {
-      return NextResponse.json({ error: 'Genres data not found' }, { status: 404 })
+    const db = getDb()
+
+    const rows = db.prepare(`
+      SELECT a.name as artistName, a.genres, COUNT(le.id) as playCount
+      FROM artists a
+      JOIN tracks t ON t.artist_id = a.id
+      LEFT JOIN listening_events le ON le.track_id = t.id
+      WHERE a.genres IS NOT NULL AND a.genres != '[]'
+      GROUP BY a.id
+      HAVING playCount > 0
+      ORDER BY playCount DESC
+    `).all() as Array<{ artistName: string; genres: string; playCount: number }>
+
+    const genreMap = new Map<string, { count: number; artists: string[] }>()
+
+    for (const row of rows) {
+      let genres: string[]
+      try { genres = JSON.parse(row.genres) } catch { continue }
+
+      for (const genre of genres) {
+        const existing = genreMap.get(genre)
+        if (existing) {
+          existing.count += row.playCount
+          if (!existing.artists.includes(row.artistName)) {
+            existing.artists.push(row.artistName)
+          }
+        } else {
+          genreMap.set(genre, { count: row.playCount, artists: [row.artistName] })
+        }
+      }
     }
-    
-    const filePath = join(dataDir, genresFile)
-    const fileContents = await readFile(filePath, 'utf-8')
-    const data = JSON.parse(fileContents)
-    
-    return NextResponse.json(data)
+
+    const genres = Array.from(genreMap.entries())
+      .map(([genre, data]) => ({
+        genre,
+        count: data.count,
+        artists: data.artists,
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    return NextResponse.json({
+      metadata: {
+        timestamp: new Date().toISOString(),
+        source: 'SQLite Database',
+      },
+      genres,
+    })
   } catch (error) {
     console.error('Error reading genres data:', error)
     return NextResponse.json({ error: 'Failed to load genres data' }, { status: 500 })
   }
 }
-

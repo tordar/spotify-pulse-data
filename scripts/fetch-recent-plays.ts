@@ -2,12 +2,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { SpotifyTokenManager } from './spotify-token-manager';
-
-interface MergedHistoryMetadata {
-  metadata?: {
-    dateRange?: { latest: string };
-  };
-}
+import {
+  getDatabase,
+  closeDatabase,
+  upsertArtist,
+  upsertAlbum,
+  upsertTrack,
+  insertListeningEvent,
+  logImport,
+} from './db/database';
 
 interface SpotifyTrack {
   id: string;
@@ -48,27 +51,6 @@ interface SpotifyRecentPlaysResponse {
   href: string;
 }
 
-interface RecentPlayData {
-  id: string;
-  name: string;
-  duration_ms: number;
-  artists: string[];
-  album: {
-    id: string;
-    name: string;
-    images: Array<{
-      height: number;
-      url: string;
-      width: number;
-    }>;
-  };
-  external_urls: {
-    spotify: string;
-  };
-  preview_url: string | null;
-  played_at: string;
-}
-
 class SpotifyRecentPlaysFetcher {
   private tokenManager: SpotifyTokenManager;
 
@@ -76,135 +58,138 @@ class SpotifyRecentPlaysFetcher {
     this.tokenManager = new SpotifyTokenManager();
   }
 
-  /**
-   * Check if there are new plays since the latest in merged history.
-   * Returns true if we should fetch (new tracks, no history, or check failed).
-   */
   async hasNewTracks(): Promise<boolean> {
-    let files = glob.sync('data/merged-streaming-history/merged-streaming-history-*.json');
-    if (files.length === 0) {
-      console.log('ℹ️  No existing history found, will fetch recent plays');
+    // Check against SQLite database for the latest event timestamp
+    try {
+      const db = getDatabase();
+      const latest = db.prepare(`
+        SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'
+      `).get() as { latest: string | null } | undefined;
+
+      const latestTimestamp = latest?.latest;
+      if (!latestTimestamp) {
+        console.log('No existing events in DB, will fetch recent plays');
+        closeDatabase();
+        return true;
+      }
+
+      const latestTime = new Date(latestTimestamp).getTime();
+      console.log(`Latest Spotify event in DB: ${latestTimestamp}`);
+      closeDatabase();
+
+      const accessToken = await this.tokenManager.getValidAccessToken();
+      const response = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=10', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) {
+        console.log('Could not check recent plays, will fetch anyway');
+        return true;
+      }
+      const data = (await response.json()) as { items: Array<{ played_at: string }> };
+      if (!data.items?.length) {
+        console.log('No recent plays from API');
+        return false;
+      }
+      const hasNew = data.items.some(item => new Date(item.played_at).getTime() > latestTime);
+      if (!hasNew) {
+        console.log('No new tracks since last run');
+      }
+      return hasNew;
+    } catch (error) {
+      console.log('Error checking for new tracks, will fetch anyway:', error);
       return true;
     }
-    files.sort((a, b) => {
-      const tsA = parseInt(a.match(/merged-streaming-history-(\d+)\.json/)?.[1] || '0');
-      const tsB = parseInt(b.match(/merged-streaming-history-(\d+)\.json/)?.[1] || '0');
-      return tsB - tsA;
-    });
-    const historyData = JSON.parse(fs.readFileSync(files[0], 'utf8')) as MergedHistoryMetadata;
-    const latestTimestamp = historyData.metadata?.dateRange?.latest;
-    if (!latestTimestamp) {
-      console.log('ℹ️  No timestamp in history, will fetch recent plays');
-      return true;
-    }
-    const latestHistoryTime = new Date(latestTimestamp).getTime();
-    console.log(`📅 Latest track in history: ${latestTimestamp}`);
+  }
+
+  async fetchRecentPlays(limit: number = 50): Promise<SpotifyPlay[]> {
+    console.log('Fetching recent Spotify plays...');
 
     const accessToken = await this.tokenManager.getValidAccessToken();
-    const response = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=10', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const isValid = await this.tokenManager.testToken(accessToken);
+    if (!isValid) {
+      throw new Error('Invalid access token');
+    }
+
+    const response = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
     });
+
     if (!response.ok) {
-      console.log('⚠️  Could not check recent plays, will fetch anyway');
-      return true;
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch recent plays: ${response.status} ${errorText}`);
     }
-    const data = (await response.json()) as { items: Array<{ played_at: string }> };
-    if (!data.items?.length) {
-      console.log('ℹ️  No recent plays from API');
-      return false;
-    }
-    const hasNew = data.items.some(item => new Date(item.played_at).getTime() > latestHistoryTime);
-    if (!hasNew) {
-      console.log('ℹ️  No new tracks since last run');
-    }
-    return hasNew;
+
+    const data = await response.json() as SpotifyRecentPlaysResponse;
+    console.log(`Fetched ${data.items.length} recent plays`);
+    return data.items;
   }
 
-  /**
-   * Fetch recent plays from Spotify API
-   */
-  async fetchRecentPlays(limit: number = 50): Promise<RecentPlayData[]> {
-    try {
-      console.log('🎵 Fetching recent Spotify plays...');
-      
-      const accessToken = await this.tokenManager.getValidAccessToken();
-      
-      // Test the token first
-      const isValid = await this.tokenManager.testToken(accessToken);
-      if (!isValid) {
-        throw new Error('Invalid access token');
-      }
+  insertPlaysIntoDb(plays: SpotifyPlay[]): number {
+    const db = getDatabase();
 
-      const response = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
+    // Get the latest existing event timestamp to avoid duplicates
+    const latest = db.prepare(`
+      SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'
+    `).get() as { latest: string | null } | undefined;
+
+    const cutoff = latest?.latest ? new Date(latest.latest).getTime() : 0;
+
+    const newPlays = plays.filter(p => new Date(p.played_at).getTime() > cutoff);
+    if (newPlays.length === 0) {
+      console.log('No new plays to insert (all already in DB)');
+      closeDatabase();
+      return 0;
+    }
+
+    let inserted = 0;
+
+    db.transaction(() => {
+      for (const play of newPlays) {
+        const track = play.track;
+        const primaryArtist = track.artists[0]?.name || 'Unknown Artist';
+        const albumName = track.album?.name || 'Unknown Album';
+
+        const artistId = upsertArtist(db, primaryArtist, track.artists[0]?.id);
+        const albumImageUrl = track.album?.images?.[0]?.url || null;
+        const albumId = upsertAlbum(db, albumName, primaryArtist, {
+          spotifyId: track.album?.id,
+          imageUrl: albumImageUrl,
+        });
+
+        const trackId = upsertTrack(db, {
+          name: track.name,
+          albumId,
+          artistId,
+          durationMs: track.duration_ms,
+          spotifyId: track.id,
+        });
+
+        // Add featured artists
+        for (let i = 1; i < track.artists.length; i++) {
+          const featArtistId = upsertArtist(db, track.artists[i].name, track.artists[i].id);
+          db.prepare(
+            `INSERT OR IGNORE INTO track_artists (track_id, artist_id, role) VALUES (?, ?, 'featured')`
+          ).run(trackId, featArtistId);
         }
-      });
+        db.prepare(
+          `INSERT OR IGNORE INTO track_artists (track_id, artist_id, role) VALUES (?, ?, 'primary')`
+        ).run(trackId, artistId);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch recent plays: ${response.status} ${errorText}`);
+        insertListeningEvent(db, trackId, play.played_at, track.duration_ms, 'spotify');
+        inserted++;
+
+        const artists = track.artists.map(a => a.name).join(', ');
+        console.log(`  Inserted: ${track.name} - ${artists}`);
       }
+    })();
 
-      const data = await response.json() as SpotifyRecentPlaysResponse;
-      
-      console.log(`✅ Fetched ${data.items.length} recent plays`);
-      
-      // Transform the data to match our format
-      const recentPlays: RecentPlayData[] = data.items.map(play => ({
-        id: play.track.id,
-        name: play.track.name,
-        duration_ms: play.track.duration_ms,
-        artists: play.track.artists.map(artist => artist.name),
-        album: {
-          id: play.track.album.id,
-          name: play.track.album.name,
-          images: play.track.album.images
-        },
-        external_urls: play.track.external_urls,
-        preview_url: play.track.preview_url,
-        played_at: play.played_at
-      }));
-
-      return recentPlays;
-    } catch (error) {
-      console.error('❌ Failed to fetch recent plays:', error);
-      throw error;
+    if (inserted > 0) {
+      logImport(db, 'spotify-recent', new Date().toISOString(), inserted);
     }
-  }
 
-  /**
-   * Save recent plays to a temporary JSON file
-   */
-  async saveRecentPlays(recentPlays: RecentPlayData[]): Promise<string> {
-    try {
-      const tempDir = 'temp';
-      
-      // Ensure temp directory exists
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      
-      const timestamp = Date.now();
-      const filename = `temp-recent-plays-${timestamp}.json`;
-      const filePath = path.join(tempDir, filename);
-      
-      const data = {
-        metadata: {
-          totalPlays: recentPlays.length,
-          timestamp: new Date().toISOString(),
-          source: 'Spotify API'
-        },
-        plays: recentPlays
-      };
-
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-      console.log(`💾 Saved recent plays to: ${filePath}`);
-      return filePath;
-    } catch (error) {
-      console.error('❌ Failed to save recent plays:', error);
-      throw error;
-    }
+    console.log(`Inserted ${inserted} new listening events into SQLite`);
+    closeDatabase();
+    return inserted;
   }
 
   private writeFetchResult(hasNewTracks: boolean): void {
@@ -217,38 +202,32 @@ class SpotifyRecentPlaysFetcher {
       `HAS_NEW_TRACKS=${hasNewTracks}\n`,
       'utf8'
     );
-    // GitHub Actions: set step output so the workflow can skip the merge job when false
     const ghOut = process.env.GITHUB_OUTPUT;
     if (ghOut) {
       fs.appendFileSync(ghOut, `has_new_tracks=${hasNewTracks}\n`, 'utf8');
     }
   }
 
-  /**
-   * Main: check for new tracks, then fetch and save recent plays if needed.
-   * Always exits 0. Writes temp/fetch-result.txt with HAS_NEW_TRACKS=true|false for CI.
-   */
-  async fetchAndSaveRecentPlays(): Promise<string | null> {
+  async fetchAndSaveRecentPlays(): Promise<number> {
     try {
       const shouldFetch = await this.hasNewTracks();
       if (!shouldFetch) {
         this.writeFetchResult(false);
         process.exit(0);
       }
-      const recentPlays = await this.fetchRecentPlays();
-      const filename = await this.saveRecentPlays(recentPlays);
-      this.writeFetchResult(true);
-      console.log('🎉 Recent plays fetch completed successfully!');
-      return filename;
+      const plays = await this.fetchRecentPlays();
+      const inserted = this.insertPlaysIntoDb(plays);
+      this.writeFetchResult(inserted > 0);
+      console.log('Recent plays fetch completed successfully!');
+      return inserted;
     } catch (error) {
-      console.error('💥 Recent plays fetch failed:', error);
+      console.error('Recent plays fetch failed:', error);
       this.writeFetchResult(false);
       process.exit(0);
     }
   }
 }
 
-// Run the script if called directly
 if (require.main === module) {
   const fetcher = new SpotifyRecentPlaysFetcher();
   fetcher.fetchAndSaveRecentPlays();
