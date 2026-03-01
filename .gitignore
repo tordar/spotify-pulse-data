@@ -38,6 +38,10 @@ data/top-artists-*.json
 data/spotify-history/*.json
 data/merged-streaming-history/*.json
 data/cleaned-data/*.json
+data/library.db-wal
+data/library.db-shm
+data/sldl-input.csv
+data/unmatched-files.json
 
 # IDE files
 .vscode/

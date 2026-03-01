@@ -1,5 +1,4 @@
-# Spotify Data Sync – runs on schedule and workflow_dispatch
-# Flow: fetch recent plays → merge into merged-streaming-history (from repo) → generate cleaned files → commit and push
+# Spotify Data Sync – fetches recent plays and writes them into library.db, then commits it
 name: Spotify Data Sync
 
 on:
@@ -9,63 +8,7 @@ on:
   workflow_dispatch: # Allow manual triggers
 
 jobs:
-  fetch-check:
-    runs-on: ubuntu-latest
-    outputs:
-      has_new_tracks: ${{ steps.fetch-result.outputs.has_new_tracks }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Pull latest changes
-        run: |
-          git fetch origin master
-          git pull --rebase origin master || git pull --no-edit origin master || echo "No remote changes to pull"
-
-      - name: Fetch recent Spotify plays
-        id: fetch-plays
-        env:
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
-        run: npm run fetch-recent-plays
-        continue-on-error: true
-
-      - name: Set fetch result
-        id: fetch-result
-        run: |
-          if [ "${{ steps.fetch-plays.outcome }}" != "success" ]; then
-            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.fetch-plays.outputs.has_new_tracks }}" = "true" ]; then
-            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
-          elif [ -f temp/fetch-result.txt ] && grep -q "HAS_NEW_TRACKS=true" temp/fetch-result.txt; then
-            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload recent plays
-        if: steps.fetch-result.outputs.has_new_tracks == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: recent-plays
-          path: temp/temp-recent-plays-*.json
-
-  # Single job: use repo's merged-streaming-history, merge temp-recent-plays into it, generate cleaned files, commit and push
-  merge-generate-and-push:
-    needs: fetch-check
-    if: needs.fetch-check.outputs.has_new_tracks == 'true'
+  sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,45 +32,36 @@ jobs:
           git fetch origin master
           git pull --rebase origin master || git pull --no-edit origin master || echo "No remote changes to pull"
 
-      - name: Download recent plays
-        uses: actions/download-artifact@v4
-        with:
-          name: recent-plays
-
-      - name: Move recent plays to temp
-        run: |
-          mkdir -p temp
-          mv temp-recent-plays-*.json temp/ 2>/dev/null || true
-          echo "Recent plays in temp:"
-          ls -la temp/ 2>/dev/null || true
-
-      - name: Merge recent plays into merged streaming history
-        run: npm run merge-recent-data
-
-      - name: Generate cleaned and consolidated data files
+      - name: Fetch recent Spotify plays into SQLite
+        id: fetch-plays
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
-        run: npm run generate-cleaned-files
+        run: npm run fetch-recent-plays
+        continue-on-error: true
 
-      - name: Add podcast data to stats
-        run: npm run add-podcast-data
+      - name: Check for new tracks
+        id: check
+        run: |
+          if [ "${{ steps.fetch-plays.outcome }}" != "success" ]; then
+            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.fetch-plays.outputs.has_new_tracks }}" = "true" ]; then
+            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
+          elif [ -f temp/fetch-result.txt ] && grep -q "HAS_NEW_TRACKS=true" temp/fetch-result.txt; then
+            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Commit and push
+      - name: Commit and push updated database
+        if: steps.check.outputs.has_new_tracks == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          MERGED_COUNT=$(ls -1 data/merged-streaming-history/merged-streaming-history-*.json 2>/dev/null | wc -l)
-          if [ "$MERGED_COUNT" -eq 0 ]; then
-            echo "::error::No merged-streaming-history file after merge (repo must contain data/merged-streaming-history/*.json, e.g. from merge-streaming-history workflow)"
-            ls -la data/merged-streaming-history/ 2>/dev/null || true
-            exit 1
-          fi
-          git add -A -f data/merged-streaming-history/ data/cleaned-data/
+          git add -f data/library.db
           if git diff --staged --quiet; then
-            echo "No changes to commit (no new plays or identical data)"
-            git status
+            echo "No changes to commit"
             exit 0
           fi
           git commit -m "Spotify sync $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
