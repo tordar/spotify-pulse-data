@@ -19,7 +19,14 @@ import * as fs from 'fs';
 const DB_PATH = path.join(__dirname, '..', '..', 'data', 'library.db');
 
 function stripTrackNumber(s: string): string {
-  return s.replace(/^\d{1,3}[\s.\-_]+/, '').trim();
+  return s
+    .replace(/^\d{1,2}-\d{1,3}[\s.\-_]+/, '') // "1-04 " disc-track format
+    .replace(/^\d{1,3}[\s.\-_]+/, '')           // "04 " simple track number
+    .trim();
+}
+
+function stripArtistNumber(s: string): string {
+  return s.replace(/^\d{1,3}\.\s+/, '').trim(); // "04. Artist" catalog prefix
 }
 
 function normalize(s: string): string {
@@ -56,8 +63,12 @@ function main() {
     artist_name: string; album_name: string;
   }>;
 
-  // Only care about those with a leading track number
-  const numbered = catalogTracks.filter(t => /^\d{1,3}[\s.\-_]/.test(t.name));
+  // Catalog tracks with a leading track number in name OR artist
+  const numbered = catalogTracks.filter(t =>
+    /^\d{1,2}-\d{1,3}[\s.\-_]/.test(t.name) ||   // "1-04 Song"
+    /^\d{1,3}[\s.\-_]/.test(t.name) ||             // "04 Song"
+    /^\d{1,3}\.\s/.test(t.artist_name)              // "04. Artist"
+  );
   console.log(`Found ${numbered.length} catalog tracks with leading track numbers (out of ${catalogTracks.length} total catalog tracks)`);
 
   // Pre-load Spotify history tracks (have listening events) for fast lookup
@@ -86,9 +97,24 @@ function main() {
     UPDATE tracks SET local_file_path = ?, download_status = 'downloaded', updated_at = datetime('now')
     WHERE id = ?
   `);
-  const updateName = db.prepare(`
+  const updateNameAndArtist = db.prepare(`
     UPDATE tracks SET name = ?, updated_at = datetime('now') WHERE id = ?
   `);
+  const getArtistByName = db.prepare<[string], { id: number }>(
+    `SELECT id FROM artists WHERE name = ? COLLATE NOCASE LIMIT 1`
+  );
+  const updateTrackArtist = db.prepare(
+    `UPDATE tracks SET artist_id = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  const updateTrackArtistRow = db.prepare(
+    `UPDATE track_artists SET artist_id = ? WHERE track_id = ? AND artist_id = (SELECT artist_id FROM tracks WHERE id = ?)`
+  );
+  const renameArtistRow = db.prepare(
+    `UPDATE artists SET name = ?, updated_at = datetime('now') WHERE name = ? COLLATE NOCASE`
+  );
+  const deleteOrphanArtist = db.prepare(
+    `DELETE FROM artists WHERE name = ? AND NOT EXISTS (SELECT 1 FROM tracks WHERE artist_id = artists.id)`
+  );
   const deleteTrack = db.prepare(`DELETE FROM tracks WHERE id = ?`);
   const deleteTrackArtists = db.prepare(`DELETE FROM track_artists WHERE track_id = ?`);
 
@@ -99,15 +125,16 @@ function main() {
   db.transaction(() => {
     for (const catalog of numbered) {
       const cleanName = stripTrackNumber(catalog.name);
-      const key = `${normalize(catalog.artist_name)}|||${normalize(cleanName)}`;
+      const cleanArtist = stripArtistNumber(catalog.artist_name);
+
+      // Try match with cleaned name + cleaned artist
+      const key = `${normalize(cleanArtist)}|||${normalize(cleanName)}`;
       const candidates = (lookup.get(key) ?? []).filter(t => !usedIds.has(t.id));
 
       let matched: typeof historyTracks[0] | null = null;
-
       if (candidates.length === 1) {
         matched = candidates[0];
       } else if (candidates.length > 1) {
-        // Prefer same album, then duration within 5s
         matched =
           candidates.find(c => normalize(c.album_name) === normalize(catalog.album_name)) ??
           candidates.find(c => c.duration_ms > 0 && Math.abs(c.duration_ms - catalog.duration_ms) < 5000) ??
@@ -116,16 +143,30 @@ function main() {
 
       if (matched) {
         usedIds.add(matched.id);
-        // Copy file path to the history track
         updatePath.run(catalog.local_file_path, matched.id);
-        // Delete the catalog duplicate
         deleteTrackArtists.run(catalog.id);
         deleteTrack.run(catalog.id);
         linked++;
-        console.log(`  ✓ Linked "${cleanName}" (was "${catalog.name}") → history track #${matched.id} (${matched.name})`);
+        const changed = cleanName !== catalog.name || cleanArtist !== catalog.artist_name;
+        console.log(`  ✓ Linked "${cleanArtist} - ${cleanName}"${changed ? ` (was "${catalog.artist_name} - ${catalog.name}")` : ''} → history #${matched.id}`);
       } else {
-        // Just fix the name in place
-        updateName.run(cleanName, catalog.id);
+        // Fix name in place
+        updateNameAndArtist.run(cleanName, catalog.id);
+
+        // Fix artist: if clean name already exists, re-point the track; otherwise just rename
+        if (cleanArtist !== catalog.artist_name) {
+          const existing = getArtistByName.get(cleanArtist);
+          if (existing) {
+            // Clean artist already exists — update track + track_artists to use it,
+            // then clean up the orphaned numbered artist row
+            updateTrackArtistRow.run(existing.id, catalog.id, catalog.id);
+            updateTrackArtist.run(existing.id, catalog.id);
+            deleteOrphanArtist.run(catalog.artist_name);
+          } else {
+            // Safe to rename the artist row in place
+            renameArtistRow.run(cleanArtist, catalog.artist_name);
+          }
+        }
         renamed++;
       }
     }

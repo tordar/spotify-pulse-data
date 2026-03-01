@@ -33,8 +33,18 @@ function normalize(s: string): string {
 }
 
 function stripTrackNumber(s: string): string {
-  // Strip leading track number patterns: "01 ", "01. ", "01 - ", "01_"
-  return s.replace(/^\d{1,3}[\s.\-_]+/, '').trim();
+  return s
+    // Disc-track format first: "1-04 ", "2-01. ", "1-04 - "
+    .replace(/^\d{1,2}-\d{1,3}[\s.\-_]+/, '')
+    // Simple track/catalog number: "04 ", "04. ", "04 - ", "04_"
+    .replace(/^\d{1,3}[\s.\-_]+/, '')
+    .trim();
+}
+
+function stripArtistNumber(s: string): string {
+  // Strip catalog-style number prefixes from artist tags: "04. Social Distortion" → "Social Distortion"
+  // Only match "digits + dot + space" — avoids stripping real artist names like "10cc" or "2PAC"
+  return s.replace(/^\d{1,3}\.\s+/, '').trim();
 }
 
 function titleFromFilename(filename: string): string {
@@ -297,8 +307,10 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
       try {
         const meta: IAudioMetadata = await parseFile(filePath, { skipCovers: true, duration: true }) as any;
         const common = meta.common;
-        const artist = common?.artist || common?.albumartist || '';
-        // Strip track numbers from metadata titles — some taggers embed "01 Song Name"
+        // Strip number prefixes from both artist and title — some taggers embed
+        // "04. Social Distortion" as artist or "1-04 Song Name" as title
+        const rawArtist = common?.artist || common?.albumartist || '';
+        const artist = rawArtist ? stripArtistNumber(rawArtist) : '';
         const title = common?.title ? stripTrackNumber(common.title) : '';
         const album = common?.album || '';
         const durationMs = meta.format?.duration ? Math.round(meta.format.duration * 1000) : 0;
