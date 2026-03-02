@@ -10,6 +10,7 @@ interface Album {
   releaseDate: string | null; albumType: string | null; totalTracks: number
   queueStatus: 'queued' | 'skipped' | null
   trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
+  duplicateCount: number
 }
 
 interface Artist {
@@ -143,6 +144,108 @@ function QueueButton({ status, pendingTracks, onChange }: {
   )
 }
 
+// ── Merge modal ────────────────────────────────────────────────────────────
+
+function MergeModal({ group, remaining, onDismiss, onMerged }: {
+  group: AlbumTrack[]
+  remaining: number  // total duplicate groups left including this one
+  onDismiss: () => void
+  onMerged: (removedId: number, keptId: number, combinedPlayCount: number) => void
+}) {
+  const [keepId, setKeepId] = useState<number>(() => {
+    // Default: keep the one with more plays, or the one with a local file
+    const withFile = group.find(t => t.localFilePath)
+    const mostPlayed = [...group].sort((a, b) => b.playCount - a.playCount)[0]
+    return (withFile ?? mostPlayed ?? group[0]).id
+  })
+  const [merging, setMerging] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Reset keepId when group changes (next duplicate shown)
+  useEffect(() => {
+    const withFile = group.find(t => t.localFilePath)
+    const mostPlayed = [...group].sort((a, b) => b.playCount - a.playCount)[0]
+    setKeepId((withFile ?? mostPlayed ?? group[0]).id)
+    setError(null)
+  }, [group])
+
+  async function doMerge() {
+    const mergeId = group.find(t => t.id !== keepId)!.id
+    setMerging(true); setError(null)
+    try {
+      const res = await fetch('/api/mapping/merge-tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keepId, mergeId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Merge failed')
+      onMerged(mergeId, keepId, data.combinedPlayCount ?? 0)
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setMerging(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70" onClick={onDismiss} />
+      <div className="relative bg-gray-900 border border-white/15 rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-start justify-between mb-1">
+          <h2 className="text-base font-semibold">Merge duplicate tracks</h2>
+          {remaining > 1 && (
+            <span className="text-xs text-orange-400 bg-orange-500/15 px-2 py-0.5 rounded-full">
+              {remaining} left
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-white/40 mb-5">
+          Both entries are the same song. Pick the name to keep — plays and local file are combined automatically.
+        </p>
+
+        <div className="space-y-2 mb-6">
+          {group.map(track => (
+            <label key={track.id}
+              className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${keepId === track.id ? 'border-green-500/50 bg-green-500/8' : 'border-white/10 hover:border-white/20'}`}>
+              <input type="radio" name="keep" value={track.id} checked={keepId === track.id}
+                onChange={() => setKeepId(track.id)} className="mt-0.5 accent-green-500" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{track.name}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                  <span className="text-xs text-white/40">{track.playCount > 0 ? `${track.playCount.toLocaleString()} plays` : 'No plays'}</span>
+                  {track.localFilePath
+                    ? <span className="text-xs text-green-400">Has local file</span>
+                    : <span className="text-xs text-yellow-500/70">No local file</span>}
+                  {track.durationMs > 0 && <span className="text-xs text-white/30">{fmt(track.durationMs)}</span>}
+                </div>
+                {track.localFilePath && (
+                  <p className="text-xs text-white/20 font-mono truncate mt-1">
+                    {track.localFilePath.split('/').slice(-2).join('/')}
+                  </p>
+                )}
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {error && <p className="text-xs text-red-400 mb-4">{error}</p>}
+
+        <div className="flex gap-3">
+          <button onClick={onDismiss}
+            className="px-4 py-2 text-sm rounded-lg bg-white/5 text-white/50 hover:bg-white/10 transition-colors">
+            Dismiss all
+          </button>
+          <button onClick={doMerge} disabled={merging}
+            className="flex-1 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 transition-colors">
+            {merging ? 'Merging…' : remaining > 1 ? `Merge & continue →` : 'Merge tracks'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Album detail panel ─────────────────────────────────────────────────────
 
 function AlbumDetailPanel({ album, onClose, onQueueChange }: {
@@ -151,73 +254,273 @@ function AlbumDetailPanel({ album, onClose, onQueueChange }: {
 }) {
   const [tracks, setTracks] = useState<AlbumTrack[]>([])
   const [loading, setLoading] = useState(true)
+  const [mergeGroupIdx, setMergeGroupIdx] = useState<number | null>(null)
+  const [dismissed, setDismissed] = useState(false)
+  const [unlinkedFiles, setUnlinkedFiles] = useState<string[]>([])
+  const [linkPickerTrackId, setLinkPickerTrackId] = useState<number | null>(null)
 
-  useEffect(() => {
+  function loadTracks() {
     setLoading(true)
-    fetch(`/api/download/albums/${album.id}/tracks`)
-      .then(r => r.json()).then(d => setTracks(d.tracks ?? []))
-      .finally(() => setLoading(false))
-  }, [album.id])
+    setDismissed(false)
+    setMergeGroupIdx(null)
+    setUnlinkedFiles([])
+    Promise.all([
+      fetch(`/api/download/albums/${album.id}/tracks`).then(r => r.json()),
+      fetch(`/api/download/albums/${album.id}/unlinked-files`).then(r => r.json()),
+    ]).then(([trackData, fileData]) => {
+      setTracks(trackData.tracks ?? [])
+      setUnlinkedFiles(fileData.files ?? [])
+    }).finally(() => setLoading(false))
+  }
 
+  async function handleLinkFile(trackId: number, filePath: string) {
+    const res = await fetch(`/api/download/tracks/${trackId}/link-file`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath }),
+    })
+    if (!res.ok) return
+    setTracks(prev => prev.map(t => t.id === trackId
+      ? { ...t, localFilePath: filePath, downloadStatus: 'downloaded' }
+      : t
+    ))
+    setUnlinkedFiles(prev => prev.filter(f => f !== filePath))
+    setLinkPickerTrackId(null)
+  }
+
+  useEffect(() => { loadTracks() }, [album.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Find groups of tracks that are duplicates, using two passes:
+  // 1. Track-number based: same disc+track slot
+  // 2. Name-based: same normalized name (strips remaster/edition suffixes) — catches
+  //    local-file tracks that lack a track_number but are clearly the same song
+  const duplicateGroups = (() => {
+    function normName(s: string) {
+      return s
+        .toLowerCase()
+        .replace(/\s*[-–]\s*(19|20)\d{2}\s+remaster(ed)?/gi, '')
+        .replace(/\s*[-–]\s*remaster(ed)?(\s+(19|20)\d{2})?/gi, '')
+        .replace(/\s*\((19|20)\d{2}\s+remaster(ed)?\)/gi, '')
+        .replace(/\s*\(remaster(ed)?\)/gi, '')
+        .replace(/\s*[-–]\s*(deluxe|anniversary|expanded|special)\s*(edition|version)?/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    }
+
+    // Pass 1: group by disc+track number
+    const bySlot = new Map<string, AlbumTrack[]>()
+    for (const t of tracks) {
+      if (!t.trackNumber) continue
+      const key = `${t.discNumber ?? 1}-${t.trackNumber}`
+      const arr = bySlot.get(key) ?? []
+      arr.push(t)
+      bySlot.set(key, arr)
+    }
+    const groups = [...bySlot.values()].filter(g => g.length > 1)
+
+    // Pass 2: for tracks not yet in any group, match by normalized name
+    const groupedIds = new Set(groups.flatMap(g => g.map(t => t.id)))
+    const byNorm = new Map<string, AlbumTrack[]>()
+    for (const t of tracks) {
+      const norm = normName(t.name)
+      const arr = byNorm.get(norm) ?? []
+      arr.push(t)
+      byNorm.set(norm, arr)
+    }
+    for (const [, grp] of byNorm) {
+      if (grp.length < 2) continue
+      // Check if any member is already in a slot-based group
+      const existingGroup = groups.find(g => g.some(t => grp.some(r => r.id === t.id)))
+      if (existingGroup) {
+        // Add ungrouped members to the existing group
+        for (const t of grp) {
+          if (!groupedIds.has(t.id)) {
+            existingGroup.push(t)
+            groupedIds.add(t.id)
+          }
+        }
+      } else {
+        // Entirely new name-based group
+        groups.push(grp)
+        grp.forEach(t => groupedIds.add(t.id))
+      }
+    }
+
+    return groups
+  })()
+
+  // Auto-open first merge modal when duplicates are found, and advance after each merge
+  useEffect(() => {
+    if (!loading && !dismissed && duplicateGroups.length > 0 && mergeGroupIdx === null) {
+      setMergeGroupIdx(0)
+    }
+  }, [loading, dismissed, duplicateGroups.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const duplicateIds = new Set(duplicateGroups.flatMap(g => g.map(t => t.id)))
   const discs = [...new Set(tracks.map(t => t.discNumber ?? 1))].sort((a, b) => a - b)
   const isMultiDisc = discs.length > 1
   const downloaded = tracks.filter(t => t.localFilePath).length
   const missing = tracks.filter(t => !t.localFilePath && t.downloadStatus !== 'skipped').length
 
+  function handleMerged(removedId: number, keptId: number, combinedPlayCount: number) {
+    setTracks(prev =>
+      prev
+        .filter(t => t.id !== removedId)
+        .map(t => t.id === keptId ? { ...t, playCount: combinedPlayCount } : t)
+    )
+    // mergeGroupIdx stays the same; duplicateGroups will shrink by 1 after tracks update,
+    // so the same index will point to the next group (or be out of bounds → modal closes)
+  }
+
   return (
-    <div className="fixed inset-y-0 right-0 w-[480px] bg-gray-950 border-l border-white/10 z-20 flex flex-col shadow-2xl">
-      <div className="flex items-start gap-3 p-4 border-b border-white/10">
-        <div className="w-16 h-16 rounded-lg overflow-hidden bg-white/5 relative shrink-0">
-          {album.imageUrl ? <Image src={album.imageUrl} alt={album.name} fill className="object-cover" sizes="64px" unoptimized /> : <div className="w-full h-full flex items-center justify-center text-white/10 text-2xl">♪</div>}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold truncate">{album.name}</p>
-          <p className="text-sm text-white/50 truncate">{album.artistName}</p>
-          <p className="text-xs text-white/30 mt-0.5">{album.releaseDate?.slice(0, 4)} · {album.playCount > 0 ? `${album.playCount.toLocaleString()} plays` : 'No plays'}</p>
-          <div className="flex gap-3 text-xs mt-1.5">
-            <span className="text-green-400">{downloaded} downloaded</span>
-            {missing > 0 && <span className="text-yellow-400">{missing} missing</span>}
+    <>
+      <div className="fixed inset-y-0 right-0 w-[480px] bg-gray-950 border-l border-white/10 z-20 flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start gap-3 p-4 border-b border-white/10">
+          <div className="w-16 h-16 rounded-lg overflow-hidden bg-white/5 relative shrink-0">
+            {album.imageUrl ? <Image src={album.imageUrl} alt={album.name} fill className="object-cover" sizes="64px" unoptimized /> : <div className="w-full h-full flex items-center justify-center text-white/10 text-2xl">♪</div>}
           </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold truncate">{album.name}</p>
+            <p className="text-sm text-white/50 truncate">{album.artistName}</p>
+            <p className="text-xs text-white/30 mt-0.5">{album.releaseDate?.slice(0, 4)} · {album.playCount > 0 ? `${album.playCount.toLocaleString()} plays` : 'No plays'}</p>
+            <div className="flex flex-wrap gap-3 text-xs mt-1.5">
+              <span className="text-green-400">{downloaded} downloaded</span>
+              {missing > 0 && <span className="text-yellow-400">{missing} missing</span>}
+              {duplicateGroups.length > 0 && (
+                <span className="text-orange-400">{duplicateGroups.length} duplicate{duplicateGroups.length > 1 ? 's' : ''}</span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white/70 text-xl shrink-0 mt-0.5">✕</button>
         </div>
-        <button onClick={onClose} className="text-white/30 hover:text-white/70 text-xl shrink-0 mt-0.5">✕</button>
-      </div>
-      <div className="px-4 py-3 border-b border-white/10">
-        <QueueButton status={album.queueStatus} pendingTracks={album.pendingTracks} onChange={onQueueChange} />
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {loading ? <div className="p-6 text-center text-white/30 text-sm">Loading tracks…</div> : (
-          <div className="py-2">
-            {discs.map(disc => (
-              <div key={disc}>
-                {isMultiDisc && <p className="px-4 py-2 text-xs font-semibold text-white/30 uppercase tracking-wider">Disc {disc}</p>}
-                {tracks.filter(t => (t.discNumber ?? 1) === disc).map(track => (
-                  <div key={track.id} className="px-4 py-2.5 hover:bg-white/5 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs text-white/25 w-5 text-right shrink-0 mt-0.5">{track.trackNumber ?? '–'}</span>
-                      <TrackStatusDot status={track.downloadStatus} hasFile={!!track.localFilePath} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className={`text-sm truncate ${track.localFilePath ? 'text-white' : 'text-white/50'}`}>{track.name}</p>
-                          <span className="text-xs text-white/25 shrink-0">{fmt(track.durationMs)}</span>
-                        </div>
-                        {track.playCount > 0 && <p className="text-xs text-white/30 mt-0.5">{track.playCount.toLocaleString()} plays</p>}
-                        {track.localFilePath && <p className="text-xs text-white/25 font-mono truncate mt-0.5" title={track.localFilePath}>{track.localFilePath.split('/').slice(-3).join('/')}</p>}
-                        {!track.localFilePath && track.downloadStatus !== 'skipped' && <p className="text-xs text-yellow-500/50 mt-0.5">Missing</p>}
-                      </div>
-                    </div>
+
+        {/* Queue button */}
+        <div className="px-4 py-3 border-b border-white/10">
+          <QueueButton status={album.queueStatus} pendingTracks={album.pendingTracks} onChange={onQueueChange} />
+        </div>
+
+        {/* Duplicate banner */}
+        {duplicateGroups.length > 0 && (
+          <div className="px-4 py-3 border-b border-orange-500/20 bg-orange-500/5">
+            <p className="text-xs text-orange-300/80 font-medium mb-2">
+              {duplicateGroups.length} track{duplicateGroups.length > 1 ? 's have' : ' has'} duplicate entries — likely renamed on Spotify
+            </p>
+            <div className="space-y-1.5">
+              {duplicateGroups.map((group, i) => (
+                <button key={i} onClick={() => { setDismissed(false); setMergeGroupIdx(i) }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/25 hover:bg-orange-500/20 transition-colors text-left">
+                  <div className="min-w-0">
+                    <p className="text-xs text-orange-200 font-medium">Track {group[0].trackNumber}</p>
+                    <p className="text-xs text-white/40 truncate">{group.map(t => t.name).join(' · ')}</p>
                   </div>
-                ))}
-              </div>
-            ))}
+                  <span className="text-xs text-orange-400 shrink-0 ml-2">Merge →</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Unlinked files banner */}
+        {unlinkedFiles.length > 0 && (
+          <div className="px-4 py-3 border-b border-blue-500/20 bg-blue-500/5">
+            <p className="text-xs text-blue-300/80 font-medium">
+              {unlinkedFiles.length} file{unlinkedFiles.length > 1 ? 's' : ''} in folder not linked to any track — click &ldquo;Link&rdquo; on a missing track
+            </p>
+          </div>
+        )}
+
+        {/* Track list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? <div className="p-6 text-center text-white/30 text-sm">Loading tracks…</div> : (
+            <div className="py-2">
+              {discs.map(disc => (
+                <div key={disc}>
+                  {isMultiDisc && <p className="px-4 py-2 text-xs font-semibold text-white/30 uppercase tracking-wider">Disc {disc}</p>}
+                  {tracks.filter(t => (t.discNumber ?? 1) === disc).map(track => (
+                    <div key={track.id}
+                      className={`px-4 py-2.5 transition-colors ${duplicateIds.has(track.id) ? 'bg-orange-500/5 hover:bg-orange-500/10' : 'hover:bg-white/5'}`}>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xs text-white/25 w-5 text-right shrink-0 mt-0.5">{track.trackNumber ?? '–'}</span>
+                        {duplicateIds.has(track.id)
+                          ? <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0 mt-1.5" title="Duplicate" />
+                          : <TrackStatusDot status={track.downloadStatus} hasFile={!!track.localFilePath} />}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className={`text-sm truncate ${track.localFilePath ? 'text-white' : duplicateIds.has(track.id) ? 'text-orange-200/70' : 'text-white/50'}`}>{track.name}</p>
+                            <span className="text-xs text-white/25 shrink-0">{fmt(track.durationMs)}</span>
+                          </div>
+                          {track.playCount > 0 && <p className="text-xs text-white/30 mt-0.5">{track.playCount.toLocaleString()} plays</p>}
+                          {track.localFilePath && <p className="text-xs text-white/25 font-mono truncate mt-0.5" title={track.localFilePath}>{track.localFilePath.split('/').slice(-3).join('/')}</p>}
+                          {!track.localFilePath && !duplicateIds.has(track.id) && track.downloadStatus !== 'skipped' && (
+                            <>
+                              <p className="text-xs text-yellow-500/50 mt-0.5">Missing</p>
+                              {linkPickerTrackId === track.id && unlinkedFiles.length > 0 && (
+                                <div className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/5 overflow-hidden">
+                                  {unlinkedFiles.map(f => (
+                                    <button key={f}
+                                      onClick={() => handleLinkFile(track.id, f)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-blue-500/15 transition-colors border-b border-blue-500/10 last:border-0">
+                                      <span className="text-blue-400 shrink-0 text-xs">📁</span>
+                                      <span className="text-xs text-white/60 font-mono truncate">{f.split('/').pop()}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {duplicateIds.has(track.id) && (
+                          <button
+                            onClick={() => {
+                              const idx = duplicateGroups.findIndex(g => g.some(t => t.id === track.id))
+                              setDismissed(false)
+                              setMergeGroupIdx(idx === -1 ? 0 : idx)
+                            }}
+                            className="text-xs text-orange-400 hover:text-orange-300 shrink-0 mt-0.5 transition-colors"
+                            title="Merge this duplicate">
+                            Merge
+                          </button>
+                        )}
+                        {!track.localFilePath && !duplicateIds.has(track.id) && track.downloadStatus !== 'skipped' && unlinkedFiles.length > 0 && (
+                          <button
+                            onClick={() => setLinkPickerTrackId(linkPickerTrackId === track.id ? null : track.id)}
+                            className={`text-xs shrink-0 mt-0.5 transition-colors ${linkPickerTrackId === track.id ? 'text-blue-300' : 'text-blue-500/70 hover:text-blue-400'}`}
+                            title="Link a local file to this track">
+                            Link
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="px-4 py-3 border-t border-white/10 flex flex-wrap gap-4 text-xs text-white/30">
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Downloaded</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500/50" /> Missing</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-400" /> Duplicate</span>
+          {unlinkedFiles.length > 0 && <span className="flex items-center gap-1.5 text-blue-400/60">📁 {unlinkedFiles.length} unlinked file{unlinkedFiles.length > 1 ? 's' : ''} in folder</span>}
+        </div>
       </div>
-      <div className="px-4 py-3 border-t border-white/10 flex gap-4 text-xs text-white/30">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Downloaded</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500/50" /> Missing</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-white/10" /> Pending</span>
-      </div>
-    </div>
+
+      {mergeGroupIdx !== null && mergeGroupIdx < duplicateGroups.length && (
+        <MergeModal
+          group={duplicateGroups[mergeGroupIdx]}
+          remaining={duplicateGroups.length - mergeGroupIdx}
+          onDismiss={() => { setMergeGroupIdx(null); setDismissed(true) }}
+          onMerged={(removedId, keptId, combinedPlayCount) => {
+            handleMerged(removedId, keptId, combinedPlayCount)
+            // After merge, duplicateGroups will shrink; the same index now points to the
+            // next group (or becomes out-of-bounds, which closes the modal naturally).
+          }}
+        />
+      )}
+    </>
   )
 }
 
@@ -329,11 +632,16 @@ function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
                 <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
                   {album.imageUrl ? <Image src={album.imageUrl} alt={album.name} fill className="object-cover" sizes="200px" unoptimized />
                     : <div className="w-full h-full flex items-center justify-center text-white/10 text-3xl">♪</div>}
+                  {album.duplicateCount > 0 && (
+                      <div className="absolute top-1 right-1 bg-orange-500/90 text-white text-xs px-1.5 py-0.5 rounded font-medium" title={`${album.duplicateCount} duplicate track slot${album.duplicateCount > 1 ? 's' : ''}`}>
+                        {album.duplicateCount}×
+                      </div>
+                    )}
                   {album.playCount > 0 && (
-                    <div className="absolute bottom-1 right-1 bg-black/70 text-white/80 text-xs px-1.5 py-0.5 rounded">
-                      {album.playCount.toLocaleString()} plays
-                    </div>
-                  )}
+                      <div className="absolute bottom-1 right-1 bg-black/70 text-white/80 text-xs px-1.5 py-0.5 rounded">
+                        {album.playCount.toLocaleString()} plays
+                      </div>
+                    )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate leading-tight">{album.name}</p>

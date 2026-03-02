@@ -315,12 +315,8 @@ class SpotifyRecentPlaysFetcher {
         await this.syncPlaysToTurso(plays);
         inserted = plays.length;
       } else {
-        // Local: write to SQLite first, then mirror new records to Turso
+        // Local: write only to SQLite — run db:sync-turso when ready to publish
         inserted = this.insertPlaysIntoDb(plays);
-        if (inserted > 0) {
-          const newPlays = plays.slice(0, inserted);
-          await this.syncPlaysToTurso(newPlays);
-        }
       }
 
       this.writeFetchResult(inserted > 0);

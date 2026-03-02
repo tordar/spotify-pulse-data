@@ -175,10 +175,25 @@ async function main() {
   if (onlyPhase && onlyPhase !== 1) { console.log('Skipping phase 1'); }
   else {
 
+  // Only process tracks where something is actually missing:
+  // the track itself lacks track/disc/duration, OR its album/artist is missing metadata.
+  // This skips the vast majority of already-enriched tracks on subsequent runs.
   const tracksWithIds = (db.prepare(`
     SELECT t.id, t.spotify_id, t.album_id, t.artist_id
     FROM tracks t
+    JOIN albums  al ON al.id = t.album_id
+    JOIN artists a  ON a.id  = t.artist_id
     WHERE t.spotify_id IS NOT NULL
+      AND (
+        t.track_number IS NULL OR t.track_number = 0
+        OR t.disc_number IS NULL OR t.disc_number = 0
+        OR t.duration_ms IS NULL OR t.duration_ms = 0
+        OR al.spotify_id IS NULL OR al.spotify_id = ''
+        OR al.image_url  IS NULL OR al.image_url  = ''
+        OR al.release_date IS NULL OR al.release_date = ''
+        OR a.spotify_id  IS NULL OR a.spotify_id  = ''
+        OR a.image_url   IS NULL OR a.image_url   = ''
+      )
   `).all() as Array<{ id: number; spotify_id: string; album_id: number; artist_id: number }>)
     .filter(t => isValidSpotifyId(t.spotify_id));
 
@@ -253,9 +268,16 @@ async function main() {
   if (onlyPhase && onlyPhase !== 2) { console.log('Skipping phase 2'); }
   else {
 
-  // All albums in DB that now have a valid spotify_id
+  // Only albums still missing at least one metadata field
   const albumsToFetch = (db.prepare(`
-    SELECT id, spotify_id FROM albums WHERE spotify_id IS NOT NULL
+    SELECT id, spotify_id FROM albums
+    WHERE spotify_id IS NOT NULL
+      AND (
+        image_url    IS NULL OR image_url    = ''
+        OR release_date IS NULL OR release_date = ''
+        OR total_tracks IS NULL
+        OR album_type   IS NULL OR album_type   = ''
+      )
   `).all() as Array<{ id: number; spotify_id: string }>)
     .filter(a => isValidSpotifyId(a.spotify_id));
 
@@ -305,9 +327,14 @@ async function main() {
   if (onlyPhase && onlyPhase !== 3) { console.log('Skipping phase 3'); }
   else {
 
-  // All artists in DB with a valid spotify_id
+  // Only artists still missing at least one metadata field
   const artistsToFetch = (db.prepare(`
-    SELECT id, spotify_id FROM artists WHERE spotify_id IS NOT NULL
+    SELECT id, spotify_id FROM artists
+    WHERE spotify_id IS NOT NULL
+      AND (
+        image_url IS NULL OR image_url = ''
+        OR genres  IS NULL OR genres   = '[]'
+      )
   `).all() as Array<{ id: number; spotify_id: string }>)
     .filter(a => isValidSpotifyId(a.spotify_id));
 

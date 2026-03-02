@@ -54,7 +54,17 @@ export async function GET(request: Request) {
         COUNT(DISTINCT t.id) as trackCount,
         COUNT(DISTINCT CASE WHEN t.download_status = 'downloaded' OR t.local_file_path IS NOT NULL THEN t.id END) as downloadedTracks,
         COUNT(DISTINCT CASE WHEN t.download_status IN ('pending','failed') AND t.local_file_path IS NULL THEN t.id END) as pendingTracks,
-        COALESCE(SUM(le_counts.cnt), 0) as playCount
+        COALESCE(SUM(le_counts.cnt), 0) as playCount,
+        COALESCE((
+          SELECT COUNT(*)
+          FROM (
+            SELECT disc_number, track_number
+            FROM tracks
+            WHERE album_id = al.id AND track_number IS NOT NULL AND track_number > 0
+            GROUP BY disc_number, track_number
+            HAVING COUNT(*) > 1
+          )
+        ), 0) as duplicateCount
       FROM albums al
       LEFT JOIN tracks t ON t.album_id = al.id
       LEFT JOIN (
@@ -97,7 +107,7 @@ export async function GET(request: Request) {
       id: number; name: string; artistName: string; imageUrl: string | null
       releaseDate: string | null; albumType: string | null; totalTracks: number | null
       queueStatus: string | null; trackCount: number; downloadedTracks: number
-      pendingTracks: number; playCount: number
+      pendingTracks: number; playCount: number; duplicateCount: number
     }
 
     const albums = (rows.rows as unknown as Row[]).map(r => ({
@@ -113,6 +123,7 @@ export async function GET(request: Request) {
       downloadedTracks: r.downloadedTracks,
       pendingTracks: r.pendingTracks,
       playCount: r.playCount,
+      duplicateCount: r.duplicateCount,
     }))
 
     return NextResponse.json({ albums, total, limit, offset })
