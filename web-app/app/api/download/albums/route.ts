@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const q = searchParams.get('q') ?? ''
     const status = searchParams.get('status') ?? 'all' // all | queued | skipped | undecided
     const sort = searchParams.get('sort') ?? 'plays'   // plays | name | downloaded | az
+    const minPlays = parseInt(searchParams.get('minPlays') ?? '0')
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 100)
     const offset = parseInt(searchParams.get('offset') ?? '0')
 
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     // 'all' = no filter
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+    const having = minPlays > 0 ? `HAVING playCount >= ${minPlays}` : ''
 
     const orderBy = {
       plays: 'playCount DESC, al.artist_name, al.name',
@@ -60,22 +62,36 @@ export async function GET(request: Request) {
       ) le_counts ON le_counts.track_id = t.id
       ${where}
       GROUP BY al.id
+      ${having}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `
 
     const countSql = `
-      SELECT COUNT(DISTINCT al.id) as total
-      FROM albums al
-      ${where}
+      SELECT COUNT(*) as total FROM (
+        SELECT al.id, COALESCE(SUM(le_counts.cnt), 0) as playCount
+        FROM albums al
+        LEFT JOIN tracks t ON t.album_id = al.id
+        LEFT JOIN (
+          SELECT track_id, COUNT(*) as cnt FROM listening_events GROUP BY track_id
+        ) le_counts ON le_counts.track_id = t.id
+        ${where}
+        GROUP BY al.id
+        ${having}
+      )
     `
+
+    // Ensure queue_status column exists (may be missing from older Turso deployments)
+    try {
+      await db.execute(`ALTER TABLE albums ADD COLUMN queue_status TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL`)
+    } catch { /* already exists */ }
 
     const [countResult, rows] = await Promise.all([
       db.execute({ sql: countSql, args }),
       db.execute({ sql, args: [...args, limit, offset] }),
     ])
 
-    const total = (countResult.rows[0] as { total: number }).total
+    const total = (countResult.rows[0] as unknown as { total: number }).total
 
     type Row = {
       id: number; name: string; artistName: string; imageUrl: string | null

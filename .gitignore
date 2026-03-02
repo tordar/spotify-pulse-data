@@ -42,6 +42,7 @@ data/library.db
 data/library.db-wal
 data/library.db-shm
 data/sldl-input.csv
+data/sldl-results.m3u8
 data/unmatched-files.json
 
 # IDE files

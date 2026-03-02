@@ -58,6 +58,11 @@ function getTursoClient(): Client | null {
   return createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() });
 }
 
+/** True when running in CI (GitHub Actions) where library.db does not exist. */
+function isCiMode(): boolean {
+  return !fs.existsSync(path.join(__dirname, '..', 'data', 'library.db'));
+}
+
 class SpotifyRecentPlaysFetcher {
   private tokenManager: SpotifyTokenManager;
 
@@ -66,24 +71,35 @@ class SpotifyRecentPlaysFetcher {
   }
 
   async hasNewTracks(): Promise<boolean> {
-    // Check against SQLite database for the latest event timestamp
     try {
-      const db = getDatabase();
-      const latest = db.prepare(`
-        SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'
-      `).get() as { latest: string | null } | undefined;
+      let latestTimestamp: string | null = null;
 
-      const latestTimestamp = latest?.latest;
-      if (!latestTimestamp) {
-        console.log('No existing events in DB, will fetch recent plays');
+      if (isCiMode()) {
+        // On CI there is no local library.db — query Turso instead
+        const turso = getTursoClient();
+        if (turso) {
+          const { rows } = await turso.execute(
+            `SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'`
+          );
+          latestTimestamp = (rows[0]?.latest as string | null) ?? null;
+          console.log(`[CI] Latest Spotify event in Turso: ${latestTimestamp ?? 'none'}`);
+        }
+      } else {
+        const db = getDatabase();
+        const row = db.prepare(
+          `SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'`
+        ).get() as { latest: string | null } | undefined;
+        latestTimestamp = row?.latest ?? null;
         closeDatabase();
+        console.log(`Latest Spotify event in local DB: ${latestTimestamp ?? 'none'}`);
+      }
+
+      if (!latestTimestamp) {
+        console.log('No existing events found, will fetch recent plays');
         return true;
       }
 
       const latestTime = new Date(latestTimestamp).getTime();
-      console.log(`Latest Spotify event in DB: ${latestTimestamp}`);
-      closeDatabase();
-
       const accessToken = await this.tokenManager.getValidAccessToken();
       const response = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=10', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -98,9 +114,7 @@ class SpotifyRecentPlaysFetcher {
         return false;
       }
       const hasNew = data.items.some(item => new Date(item.played_at).getTime() > latestTime);
-      if (!hasNew) {
-        console.log('No new tracks since last run');
-      }
+      if (!hasNew) console.log('No new tracks since last run');
       return hasNew;
     } catch (error) {
       console.log('Error checking for new tracks, will fetch anyway:', error);
@@ -284,18 +298,29 @@ class SpotifyRecentPlaysFetcher {
 
   async fetchAndSaveRecentPlays(): Promise<number> {
     try {
+      const ci = isCiMode();
+      if (ci) console.log('[CI mode] No local library.db — writing to Turso only');
+
       const shouldFetch = await this.hasNewTracks();
       if (!shouldFetch) {
         this.writeFetchResult(false);
         process.exit(0);
       }
-      const plays = await this.fetchRecentPlays();
-      const inserted = this.insertPlaysIntoDb(plays);
 
-      // Mirror new plays to Turso so the Vercel web app sees them immediately
-      if (inserted > 0) {
-        const newPlays = plays.slice(0, inserted); // newest plays are first
-        await this.syncPlaysToTurso(newPlays);
+      const plays = await this.fetchRecentPlays();
+
+      let inserted: number;
+      if (ci) {
+        // In CI, skip local SQLite entirely and write directly to Turso
+        await this.syncPlaysToTurso(plays);
+        inserted = plays.length;
+      } else {
+        // Local: write to SQLite first, then mirror new records to Turso
+        inserted = this.insertPlaysIntoDb(plays);
+        if (inserted > 0) {
+          const newPlays = plays.slice(0, inserted);
+          await this.syncPlaysToTurso(newPlays);
+        }
       }
 
       this.writeFetchResult(inserted > 0);

@@ -18,6 +18,9 @@ export async function POST(
     }
 
     const db = getDb()
+    try {
+      await db.execute(`ALTER TABLE albums ADD COLUMN queue_status TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL`)
+    } catch { /* already exists */ }
     await db.execute({
       sql: `UPDATE albums SET queue_status = ?, updated_at = datetime('now') WHERE id = ?`,
       args: [status, albumId],

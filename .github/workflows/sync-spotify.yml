@@ -1,4 +1,4 @@
-# Spotify Data Sync – fetches recent plays and writes them into library.db, then commits it
+# Spotify Data Sync – fetches recent plays and writes them into Turso
 name: Spotify Data Sync
 
 on:
@@ -10,13 +10,9 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,13 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Pull latest changes
-        run: |
-          git fetch origin master
-          git pull --rebase origin master || git pull --no-edit origin master || echo "No remote changes to pull"
-
-      - name: Fetch recent Spotify plays into SQLite + Turso
-        id: fetch-plays
+      - name: Fetch recent Spotify plays → Turso
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
@@ -41,30 +31,3 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: npm run fetch-recent-plays
-        continue-on-error: true
-
-      - name: Check for new tracks
-        id: check
-        run: |
-          if [ "${{ steps.fetch-plays.outcome }}" != "success" ]; then
-            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.fetch-plays.outputs.has_new_tracks }}" = "true" ]; then
-            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
-          elif [ -f temp/fetch-result.txt ] && grep -q "HAS_NEW_TRACKS=true" temp/fetch-result.txt; then
-            echo "has_new_tracks=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_new_tracks=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Commit and push updated database
-        if: steps.check.outputs.has_new_tracks == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -f data/library.db
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "Spotify sync $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          git push https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git master

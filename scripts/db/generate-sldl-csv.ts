@@ -83,6 +83,7 @@ function generateSldlCsv(opts?: { includeRetries?: boolean; queuedOnly?: boolean
     console.log(`    ${row.download_status}: ${row.c.toLocaleString()}`);
   }
 
+  const playlistPath = path.join(__dirname, '..', '..', 'data', 'sldl-results.m3u8');
   console.log(`\nRun sldl with:`);
   console.log(`  sldl "${outputPath}" \\`);
   console.log(`    --artist-col "Artist" \\`);
@@ -93,7 +94,10 @@ function generateSldlCsv(opts?: { includeRetries?: boolean; queuedOnly?: boolean
   console.log(`    --name-format "{albumartist(/)album(/)track(. )title|filename}" \\`);
   console.log(`    --pref-format "flac,mp3" \\`);
   console.log(`    --pref-min-bitrate 320 \\`);
-  console.log(`    --concurrent-downloads 4`);
+  console.log(`    --concurrent-downloads 4 \\`);
+  console.log(`    --write-playlist "${playlistPath}"`);
+  console.log(`\nAfter downloads finish, link files to the database:`);
+  console.log(`  npm run db:post-download-scan -- /path/to/nas/music --playlist "${playlistPath}"`);
 
   closeDatabase();
 }

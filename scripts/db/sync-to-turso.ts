@@ -51,6 +51,14 @@ async function main() {
     await turso.execute(stmt);
   }
 
+  // Run column migrations (ALTER TABLE ADD COLUMN — safe to re-run, errors are ignored)
+  const columnMigrations = [
+    `ALTER TABLE albums ADD COLUMN queue_status TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL`,
+  ];
+  for (const stmt of columnMigrations) {
+    try { await turso.execute(stmt); } catch { /* column already exists */ }
+  }
+
   console.log('Schema applied.');
   console.log('Starting full sync from library.db → Turso…');
 

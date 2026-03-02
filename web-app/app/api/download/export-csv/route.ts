@@ -13,10 +13,13 @@ function escapeCsv(value: string): string {
 export async function GET() {
   try {
     const db = getDb()
+    try {
+      await db.execute(`ALTER TABLE albums ADD COLUMN queue_status TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL`)
+    } catch { /* already exists */ }
 
     const queuedCount = (await db.execute(
       `SELECT COUNT(*) as c FROM albums WHERE queue_status = 'queued'`
-    )).rows[0] as { c: number }
+    )).rows[0] as unknown as { c: number }
 
     const useQueueFilter = queuedCount.c > 0
 

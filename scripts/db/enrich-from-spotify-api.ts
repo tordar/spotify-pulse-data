@@ -142,6 +142,14 @@ async function main() {
   const setAlbumSpotifyId = db.prepare(
     `UPDATE albums SET spotify_id = ?, updated_at = datetime('now') WHERE id = ? AND (spotify_id IS NULL OR spotify_id = '')`
   );
+  const updateTrackNumbers = db.prepare(`
+    UPDATE tracks SET
+      track_number = CASE WHEN track_number IS NULL OR track_number = 0 THEN ? ELSE track_number END,
+      disc_number  = CASE WHEN disc_number  IS NULL OR disc_number  = 0 THEN ? ELSE disc_number  END,
+      duration_ms  = CASE WHEN duration_ms  IS NULL OR duration_ms  = 0 THEN ? ELSE duration_ms  END,
+      updated_at   = datetime('now')
+    WHERE id = ?
+  `);
   const updateAlbumMeta = db.prepare(`
     UPDATE albums SET
       image_url    = COALESCE(NULLIF(image_url, ''), ?),
@@ -159,6 +167,10 @@ async function main() {
     WHERE spotify_id = ?
   `);
 
+  // Shared sets accumulated across phases
+  const newAlbumSpotifyIds = new Set<string>();
+  const newArtistSpotifyIds = new Set<string>();
+
   // ── Phase 1: Batch-fetch tracks ───────────────────────────────────────────
   if (onlyPhase && onlyPhase !== 1) { console.log('Skipping phase 1'); }
   else {
@@ -171,9 +183,6 @@ async function main() {
     .filter(t => isValidSpotifyId(t.spotify_id));
 
   console.log(`\nPhase 1: fetching metadata for ${tracksWithIds.length.toLocaleString()} tracks (${Math.ceil(tracksWithIds.length / 50)} API calls)…`);
-
-  const newAlbumSpotifyIds = new Set<string>(); // Spotify album IDs discovered this run
-  const newArtistSpotifyIds = new Set<string>();
 
   let trackBatch = 0;
   let trackErrors = 0;
@@ -197,6 +206,9 @@ async function main() {
         const local = chunk[i];
         const sp = tracks[i];
         if (!sp) continue;
+
+        // Track numbers + duration
+        updateTrackNumbers.run(sp.track_number, sp.disc_number, sp.duration_ms, local.id);
 
         // Album spotify_id
         const currentAlbum = getAlbumById.get(local.album_id);
@@ -346,7 +358,9 @@ async function main() {
       (SELECT COUNT(*) FROM albums WHERE spotify_id IS NOT NULL) as albums_with_id,
       (SELECT COUNT(*) FROM albums WHERE image_url IS NOT NULL) as albums_with_image,
       (SELECT COUNT(*) FROM albums WHERE release_date IS NOT NULL) as albums_with_date,
-      (SELECT COUNT(*) FROM tracks WHERE spotify_id IS NOT NULL) as tracks_with_id
+      (SELECT COUNT(*) FROM tracks WHERE spotify_id IS NOT NULL) as tracks_with_id,
+      (SELECT COUNT(*) FROM tracks WHERE track_number > 0) as tracks_with_number,
+      (SELECT COUNT(*) FROM tracks WHERE disc_number > 0) as tracks_with_disc
   `).get() as Record<string, number>;
 
   console.log('\n── Final stats ──────────────────────────────────────────');
@@ -357,6 +371,8 @@ async function main() {
   console.log(`Albums   with image:       ${stats.albums_with_image.toLocaleString()}`);
   console.log(`Albums   with release date:${stats.albums_with_date.toLocaleString()}`);
   console.log(`Tracks   with Spotify ID:  ${stats.tracks_with_id.toLocaleString()}`);
+  console.log(`Tracks   with track_number:${stats.tracks_with_number.toLocaleString()}`);
+  console.log(`Tracks   with disc_number: ${stats.tracks_with_disc.toLocaleString()}`);
 
   db.close();
   console.log('\nDone. Run `npm run db:sync-turso` to push to production.');
