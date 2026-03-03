@@ -874,8 +874,9 @@ const SAVED_SORT = [
 
 const SAVED_STATUS_TABS = [
   { key: 'all', label: 'All' },
-  { key: 'in_library', label: 'In library' },
-  { key: 'not_in_library', label: 'Not in library' },
+  { key: 'missing', label: 'Not downloaded' },
+  { key: 'partial', label: '< 50% downloaded' },
+  { key: 'complete', label: '≥ 50% downloaded' },
 ]
 
 function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
@@ -930,9 +931,15 @@ function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
 
   const year = (d: string | null) => d?.slice(0, 4) ?? null
 
+  function dlPct(a: SavedAlbum) {
+    const total = a.trackCount || a.totalTracks
+    return total > 0 ? a.downloadedTracks / total : 0
+  }
+
   let filtered = albums
-  if (statusTab === 'in_library') filtered = albums.filter(a => a.inLibrary)
-  else if (statusTab === 'not_in_library') filtered = albums.filter(a => !a.inLibrary)
+  if (statusTab === 'missing') filtered = albums.filter(a => a.downloadedTracks === 0)
+  else if (statusTab === 'partial') filtered = albums.filter(a => dlPct(a) < 0.5)
+  else if (statusTab === 'complete') filtered = albums.filter(a => dlPct(a) >= 0.5)
 
   if (sort === 'az') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
   else if (sort === 'artist') filtered = [...filtered].sort((a, b) => a.artistName.localeCompare(b.artistName))
@@ -1011,17 +1018,28 @@ function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
                     local ? 'cursor-pointer' : ''
                   } ${
                     selectedAlbum && local && selectedAlbum.id === local.id ? 'border-white/40 ring-1 ring-white/20'
-                    : album.inLibrary ? 'border-green-500/20 hover:border-green-500/40'
+                    : album.downloadedTracks > 0 && album.downloadedTracks >= (album.trackCount || album.totalTracks) ? 'border-green-500/20 hover:border-green-500/40'
+                    : album.downloadedTracks > 0 ? 'border-yellow-500/20 hover:border-yellow-500/40'
                     : 'border-white/10 hover:border-white/25'
                   }`}>
                   <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
                     {album.imageUrl ? <Image src={album.imageUrl} alt={album.name} fill className="object-cover" sizes="200px" unoptimized />
                       : <div className="w-full h-full flex items-center justify-center text-white/10 text-3xl">♪</div>}
-                    {album.inLibrary && (
-                      <div className="absolute top-1.5 left-1.5 bg-green-600/90 text-white text-xs px-1.5 py-0.5 rounded font-medium">
-                        In library
-                      </div>
-                    )}
+                    {(() => {
+                      const total = album.trackCount || album.totalTracks
+                      const pct = total > 0 ? Math.round((album.downloadedTracks / total) * 100) : 0
+                      if (pct >= 100) return (
+                        <div className="absolute top-1.5 left-1.5 bg-green-600/90 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                          Downloaded
+                        </div>
+                      )
+                      if (pct > 0) return (
+                        <div className="absolute top-1.5 left-1.5 bg-yellow-600/90 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                          {pct}%
+                        </div>
+                      )
+                      return null
+                    })()}
                     {album.playCount > 0 && (
                       <div className="absolute bottom-1 right-1 bg-black/70 text-white/80 text-xs px-1.5 py-0.5 rounded">
                         {album.playCount.toLocaleString()} plays
@@ -1036,19 +1054,11 @@ function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
                       <span className="text-xs text-white/20">{album.totalTracks} tracks</span>
                     </div>
                   </div>
-                  {album.inLibrary ? (
-                    <>
-                      <DownloadBar downloaded={album.downloadedTracks} total={album.trackCount} />
-                      {local && (
-                        <div onClick={e => e.stopPropagation()}>
-                          <QueueButton status={local.queueStatus} pendingTracks={local.pendingTracks}
-                            onChange={s => onQueueChange(local.id, s)} />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="mt-2 py-1.5 text-center text-xs text-white/25 border border-dashed border-white/10 rounded-lg">
-                      Not yet tracked
+                  <DownloadBar downloaded={album.downloadedTracks} total={album.trackCount || album.totalTracks} />
+                  {local && (
+                    <div onClick={e => e.stopPropagation()}>
+                      <QueueButton status={local.queueStatus} pendingTracks={local.pendingTracks}
+                        onChange={s => onQueueChange(local.id, s)} />
                     </div>
                   )}
                 </div>
@@ -1115,6 +1125,18 @@ export default function DownloadPage() {
     } finally { setExporting(false) }
   }
 
+  const [clearing, setClearing] = useState(false)
+
+  async function clearQueue() {
+    if (!summary || summary.queuedAlbums === 0) return
+    if (!confirm(`Clear all ${summary.queuedAlbums} queued albums?`)) return
+    setClearing(true)
+    try {
+      await fetch('/api/download/albums/clear-queue', { method: 'POST' })
+      await fetchSummary()
+    } finally { setClearing(false) }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-surface via-dark-surfaceHover to-surface-800 text-white">
       {/* Header */}
@@ -1146,11 +1168,17 @@ export default function DownloadPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            {summary && (
-              <div className="text-right text-sm">
-                <p className="text-green-400 font-medium">{summary.queuedAlbums.toLocaleString()} albums queued</p>
-                <p className="text-white/40 text-xs">{summary.queuedTracks.toLocaleString()} tracks to download</p>
-              </div>
+            {summary && summary.queuedAlbums > 0 && (
+              <>
+                <div className="text-right text-sm">
+                  <p className="text-green-400 font-medium">{summary.queuedAlbums.toLocaleString()} albums queued</p>
+                  <p className="text-white/40 text-xs">{summary.queuedTracks.toLocaleString()} tracks to download</p>
+                </div>
+                <button onClick={clearQueue} disabled={clearing}
+                  className="px-3 py-2 text-sm rounded-lg bg-white/5 text-white/50 hover:bg-red-500/15 hover:text-red-400 border border-white/10 hover:border-red-500/30 disabled:opacity-50 transition-colors">
+                  {clearing ? 'Clearing…' : 'Clear queue'}
+                </button>
+              </>
             )}
             <button onClick={exportCsv} disabled={exporting}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 transition-colors">

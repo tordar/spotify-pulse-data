@@ -57,58 +57,65 @@ export async function GET(request: Request) {
 
     const data: SpotifyPaginatedResponse = await res.json()
 
-    const spotifyIds = data.items.map(i => i.album.id)
-
-    // Batch-lookup local DB status for all albums on this page
-    let localMap = new Map<string, {
+    type LocalInfo = {
       id: number; queueStatus: string | null
       trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
-    }>()
+    }
 
-    if (spotifyIds.length > 0) {
-      const placeholders = spotifyIds.map(() => '?').join(',')
-      const { rows } = await db.execute({
-        sql: `
-          SELECT
-            al.id,
-            al.spotify_id as spotifyId,
-            al.queue_status as queueStatus,
-            COUNT(DISTINCT t.id) as trackCount,
-            COUNT(DISTINCT CASE WHEN t.download_status = 'downloaded' OR t.local_file_path IS NOT NULL THEN t.id END) as downloadedTracks,
-            COUNT(DISTINCT CASE WHEN t.download_status IN ('pending','failed') AND t.local_file_path IS NULL THEN t.id END) as pendingTracks,
-            COALESCE(SUM(le_counts.cnt), 0) as playCount
-          FROM albums al
-          LEFT JOIN tracks t ON t.album_id = al.id
-          LEFT JOIN (
-            SELECT track_id, COUNT(*) as cnt FROM listening_events GROUP BY track_id
-          ) le_counts ON le_counts.track_id = t.id
-          WHERE al.spotify_id IN (${placeholders})
-          GROUP BY al.id
-        `,
-        args: spotifyIds,
-      })
+    const localAlbumSql = `
+      SELECT
+        al.id,
+        al.spotify_id as spotifyId,
+        LOWER(al.name) as nameLower,
+        LOWER(al.artist_name) as artistNameLower,
+        al.queue_status as queueStatus,
+        COUNT(DISTINCT t.id) as trackCount,
+        COUNT(DISTINCT CASE WHEN t.download_status = 'downloaded' OR t.local_file_path IS NOT NULL THEN t.id END) as downloadedTracks,
+        COUNT(DISTINCT CASE WHEN t.download_status IN ('pending','failed') AND t.local_file_path IS NULL THEN t.id END) as pendingTracks,
+        COALESCE(SUM(le_counts.cnt), 0) as playCount
+      FROM albums al
+      LEFT JOIN tracks t ON t.album_id = al.id
+      LEFT JOIN (
+        SELECT track_id, COUNT(*) as cnt FROM listening_events GROUP BY track_id
+      ) le_counts ON le_counts.track_id = t.id
+      GROUP BY al.id
+    `
+    const { rows: allLocalRows } = await db.execute(localAlbumSql)
 
-      type LocalRow = {
-        id: number; spotifyId: string; queueStatus: string | null
-        trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
+    type LocalRow = {
+      id: number; spotifyId: string | null; nameLower: string; artistNameLower: string
+      queueStatus: string | null
+      trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
+    }
+    const localRows = allLocalRows as unknown as LocalRow[]
+
+    // Index by spotify_id and by normalized name+artist for fallback matching
+    const bySpotifyId = new Map<string, LocalInfo>()
+    const byNameArtist = new Map<string, LocalInfo>()
+    for (const row of localRows) {
+      const info: LocalInfo = {
+        id: row.id,
+        queueStatus: row.queueStatus,
+        trackCount: row.trackCount,
+        downloadedTracks: row.downloadedTracks,
+        pendingTracks: row.pendingTracks,
+        playCount: row.playCount,
       }
-      for (const row of rows as unknown as LocalRow[]) {
-        localMap.set(row.spotifyId, {
-          id: row.id,
-          queueStatus: row.queueStatus,
-          trackCount: row.trackCount,
-          downloadedTracks: row.downloadedTracks,
-          pendingTracks: row.pendingTracks,
-          playCount: row.playCount,
-        })
-      }
+      if (row.spotifyId) bySpotifyId.set(row.spotifyId, info)
+      byNameArtist.set(`${row.nameLower}||${row.artistNameLower}`, info)
+    }
+
+    function findLocal(spotifyId: string, name: string, artistName: string): LocalInfo | null {
+      return bySpotifyId.get(spotifyId)
+        ?? byNameArtist.get(`${name.toLowerCase()}||${artistName.toLowerCase()}`)
+        ?? null
     }
 
     let albums = data.items.map(item => {
       const a = item.album
       const artistName = a.artists.map(ar => ar.name).join(', ')
       const imageUrl = a.images?.[0]?.url ?? null
-      const local = localMap.get(a.id) ?? null
+      const local = findLocal(a.id, a.name, artistName)
 
       return {
         spotifyId: a.id,
