@@ -8,7 +8,7 @@ import {
 
 const COOKIE_MAX_AGE = 600 // 10 minutes
 const SCOPES =
-  'user-read-recently-played user-read-playback-state user-read-private user-read-email'
+  'user-read-recently-played user-read-playback-state user-read-private user-read-email user-library-read'
 
 function buildSpotifyAuthUrl(
   clientId: string,

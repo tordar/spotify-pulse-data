@@ -13,6 +13,15 @@ interface Album {
   duplicateCount: number
 }
 
+interface SavedAlbum {
+  spotifyId: string; name: string; artistName: string; imageUrl: string | null
+  releaseDate: string; albumType: string; totalTracks: number; addedAt: string
+  spotifyUrl: string | null
+  localId: number | null; queueStatus: string | null
+  trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
+  inLibrary: boolean
+}
+
 interface Artist {
   id: number; name: string; imageUrl: string | null; spotifyId: string | null
   trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
@@ -34,6 +43,11 @@ interface AlbumTrack {
 interface Summary { queuedAlbums: number; queuedTracks: number }
 
 // ── Constants ──────────────────────────────────────────────────────────────
+
+const SOURCE_TABS = [
+  { key: 'listened', label: 'Most Listened' },
+  { key: 'saved', label: 'Saved Albums' },
+]
 
 const VIEW_TABS = [
   { key: 'albums', label: 'Albums' },
@@ -850,9 +864,215 @@ function TracksView() {
   )
 }
 
+// ── Saved Albums view ──────────────────────────────────────────────────────
+
+const SAVED_SORT = [
+  { key: 'added', label: 'Recently saved' },
+  { key: 'az', label: 'A–Z' },
+  { key: 'artist', label: 'By artist' },
+]
+
+const SAVED_STATUS_TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'in_library', label: 'In library' },
+  { key: 'not_in_library', label: 'Not in library' },
+]
+
+function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
+  selectedAlbum: Album | null
+  onSelectAlbum: (a: Album | null) => void
+  onQueueChange: (id: number, s: 'queued' | 'skipped' | null) => void
+}) {
+  const [albums, setAlbums] = useState<SavedAlbum[]>([])
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [q, setQ] = useState('')
+  const [statusTab, setStatusTab] = useState('all')
+  const [sort, setSort] = useState('added')
+  const [error, setError] = useState<string | null>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fetch_ = useCallback(async (query: string, off: number, append = false) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const p = new URLSearchParams({ q: query, limit: String(LIMIT), offset: String(off) })
+      const res = await fetch(`/api/spotify/saved-albums?${p}`)
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to load saved albums')
+        if (!append) setAlbums([])
+        return
+      }
+      if (append) setAlbums(prev => [...prev, ...(data.albums ?? [])])
+      else { setAlbums(data.albums ?? []); setOffset(0) }
+      setTotal(data.total ?? 0)
+      setHasMore(data.hasMore ?? false)
+    } catch (e) {
+      setError(String(e))
+      if (!append) setAlbums([])
+    } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { fetch_('', 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => fetch_(q, 0), 300)
+  }, [q, fetch_])
+
+  async function loadMore() {
+    const next = offset + LIMIT; setOffset(next)
+    await fetch_(q, next, true)
+  }
+
+  const year = (d: string | null) => d?.slice(0, 4) ?? null
+
+  let filtered = albums
+  if (statusTab === 'in_library') filtered = albums.filter(a => a.inLibrary)
+  else if (statusTab === 'not_in_library') filtered = albums.filter(a => !a.inLibrary)
+
+  if (sort === 'az') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+  else if (sort === 'artist') filtered = [...filtered].sort((a, b) => a.artistName.localeCompare(b.artistName))
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-400 text-sm mb-2">{error}</p>
+        {error.includes('not connected') && (
+          <p className="text-white/40 text-xs">Connect your Spotify account on the home page to view saved albums.</p>
+        )}
+      </div>
+    )
+  }
+
+  function albumToLocal(a: SavedAlbum): Album | null {
+    if (!a.localId) return null
+    return {
+      id: a.localId,
+      name: a.name,
+      artistName: a.artistName,
+      imageUrl: a.imageUrl,
+      releaseDate: a.releaseDate,
+      albumType: a.albumType,
+      totalTracks: a.totalTracks,
+      queueStatus: (a.queueStatus as 'queued' | 'skipped' | null) ?? null,
+      trackCount: a.trackCount,
+      downloadedTracks: a.downloadedTracks,
+      pendingTracks: a.pendingTracks,
+      playCount: a.playCount,
+      duplicateCount: 0,
+    }
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <input
+          className="flex-1 min-w-48 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/30 focus:outline-none focus:border-white/30"
+          placeholder="Search saved albums…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+        />
+        <div className="flex bg-white/5 rounded-lg p-0.5">
+          {SAVED_STATUS_TABS.map(tab => (
+            <button key={tab.key} onClick={() => setStatusTab(tab.key)}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${statusTab === tab.key ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/70'}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <select value={sort} onChange={e => setSort(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 focus:outline-none focus:border-white/30">
+          {SAVED_SORT.map(o => <option key={o.key} value={o.key} className="bg-gray-900">{o.label}</option>)}
+        </select>
+      </div>
+
+      <p className="text-xs text-white/30 mb-4">
+        {total.toLocaleString()} saved albums on Spotify
+        {statusTab !== 'all' && ` · showing ${filtered.length}`}
+      </p>
+
+      {loading && albums.length === 0 ? (
+        <div className="text-center text-white/30 py-20 text-sm">Loading saved albums from Spotify…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center text-white/30 py-20 text-sm">No albums found</div>
+      ) : (
+        <>
+          <div className={`grid gap-4 ${selectedAlbum ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'}`}>
+            {filtered.map(album => {
+              const local = albumToLocal(album)
+              return (
+                <div key={album.spotifyId}
+                  onClick={() => local ? onSelectAlbum(selectedAlbum?.id === local.id ? null : local) : undefined}
+                  className={`rounded-xl bg-white/5 border transition-all p-3 flex flex-col ${
+                    local ? 'cursor-pointer' : ''
+                  } ${
+                    selectedAlbum && local && selectedAlbum.id === local.id ? 'border-white/40 ring-1 ring-white/20'
+                    : album.inLibrary ? 'border-green-500/20 hover:border-green-500/40'
+                    : 'border-white/10 hover:border-white/25'
+                  }`}>
+                  <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
+                    {album.imageUrl ? <Image src={album.imageUrl} alt={album.name} fill className="object-cover" sizes="200px" unoptimized />
+                      : <div className="w-full h-full flex items-center justify-center text-white/10 text-3xl">♪</div>}
+                    {album.inLibrary && (
+                      <div className="absolute top-1.5 left-1.5 bg-green-600/90 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                        In library
+                      </div>
+                    )}
+                    {album.playCount > 0 && (
+                      <div className="absolute bottom-1 right-1 bg-black/70 text-white/80 text-xs px-1.5 py-0.5 rounded">
+                        {album.playCount.toLocaleString()} plays
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate leading-tight">{album.name}</p>
+                    <p className="text-xs text-white/50 truncate mt-0.5">{album.artistName}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {year(album.releaseDate) && <span className="text-xs text-white/30">{year(album.releaseDate)}</span>}
+                      <span className="text-xs text-white/20">{album.totalTracks} tracks</span>
+                    </div>
+                  </div>
+                  {album.inLibrary ? (
+                    <>
+                      <DownloadBar downloaded={album.downloadedTracks} total={album.trackCount} />
+                      {local && (
+                        <div onClick={e => e.stopPropagation()}>
+                          <QueueButton status={local.queueStatus} pendingTracks={local.pendingTracks}
+                            onChange={s => onQueueChange(local.id, s)} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mt-2 py-1.5 text-center text-xs text-white/25 border border-dashed border-white/10 rounded-lg">
+                      Not yet tracked
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button onClick={loadMore} disabled={loading}
+                className="px-6 py-2.5 text-sm rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-50 transition-colors">
+                {loading ? 'Loading…' : 'Load more'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export default function DownloadPage() {
+  const [source, setSource] = useState<'listened' | 'saved'>('listened')
   const [view, setView] = useState<'albums' | 'artists' | 'tracks'>('albums')
   const [summary, setSummary] = useState<Summary | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -904,15 +1124,26 @@ export default function DownloadPage() {
             <div>
               <h1 className="text-lg font-semibold">Download Queue</h1>
             </div>
-            {/* View tabs */}
+            {/* Source toggle */}
             <div className="flex bg-white/5 rounded-lg p-0.5">
-              {VIEW_TABS.map(tab => (
-                <button key={tab.key} onClick={() => { setView(tab.key as typeof view); setSelectedAlbum(null) }}
-                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${view === tab.key ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}>
+              {SOURCE_TABS.map(tab => (
+                <button key={tab.key} onClick={() => { setSource(tab.key as typeof source); setSelectedAlbum(null) }}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${source === tab.key ? 'bg-green-600/80 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}>
                   {tab.label}
                 </button>
               ))}
             </div>
+            {/* View tabs (only for listened mode) */}
+            {source === 'listened' && (
+              <div className="flex bg-white/5 rounded-lg p-0.5">
+                {VIEW_TABS.map(tab => (
+                  <button key={tab.key} onClick={() => { setView(tab.key as typeof view); setSelectedAlbum(null) }}
+                    className={`px-4 py-1.5 text-sm rounded-md transition-colors ${view === tab.key ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {summary && (
@@ -931,18 +1162,28 @@ export default function DownloadPage() {
       </div>
 
       <div className="max-w-screen-xl mx-auto px-6 py-6">
-        {view === 'albums' && (
-          <AlbumsView
+        {source === 'saved' ? (
+          <SavedAlbumsView
             selectedAlbum={selectedAlbum}
             onSelectAlbum={setSelectedAlbum}
             onQueueChange={setQueueStatus}
           />
+        ) : (
+          <>
+            {view === 'albums' && (
+              <AlbumsView
+                selectedAlbum={selectedAlbum}
+                onSelectAlbum={setSelectedAlbum}
+                onQueueChange={setQueueStatus}
+              />
+            )}
+            {view === 'artists' && <ArtistsView />}
+            {view === 'tracks' && <TracksView />}
+          </>
         )}
-        {view === 'artists' && <ArtistsView />}
-        {view === 'tracks' && <TracksView />}
       </div>
 
-      {selectedAlbum && view === 'albums' && (
+      {selectedAlbum && (source === 'saved' || view === 'albums') && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setSelectedAlbum(null)} />
           <AlbumDetailPanel
