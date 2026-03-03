@@ -27,7 +27,7 @@ function normalizeDashes(text: string): string {
     .replace(/\uFF0D/g, '-')
 }
 function normalizeAlbumKey(name: string): string {
-  return normalizeDashes(name.toLowerCase().trim())
+  return normalizeDashes((name ?? '').toLowerCase().trim())
 }
 
 interface RecentPlayItem {
