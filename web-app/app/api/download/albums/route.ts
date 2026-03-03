@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') ?? 'all' // all | queued | skipped | undecided
     const sort = searchParams.get('sort') ?? 'plays'   // plays | name | downloaded | az
     const minPlays = parseInt(searchParams.get('minPlays') ?? '0')
+    const hideMostlyDownloaded = searchParams.get('hideMostlyDownloaded') === '1' // exclude albums with ≥50% tracks downloaded
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 100)
     const offset = parseInt(searchParams.get('offset') ?? '0')
 
@@ -32,7 +33,10 @@ export async function GET(request: Request) {
     // 'all' = no filter
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
-    const having = minPlays > 0 ? `HAVING playCount >= ${minPlays}` : ''
+    const havingParts: string[] = []
+    if (minPlays > 0) havingParts.push(`playCount >= ${minPlays}`)
+    if (hideMostlyDownloaded) havingParts.push(`(trackCount = 0 OR (downloadedTracks * 100.0 / trackCount) <= 50)`)
+    const having = havingParts.length ? `HAVING ${havingParts.join(' AND ')}` : ''
 
     const orderBy = {
       plays: 'playCount DESC, al.artist_name, al.name',
@@ -46,6 +50,7 @@ export async function GET(request: Request) {
         al.id,
         al.name,
         al.artist_name as artistName,
+        al.spotify_id as spotifyId,
         al.image_url as imageUrl,
         al.release_date as releaseDate,
         al.album_type as albumType,
@@ -79,7 +84,10 @@ export async function GET(request: Request) {
 
     const countSql = `
       SELECT COUNT(*) as total FROM (
-        SELECT al.id, COALESCE(SUM(le_counts.cnt), 0) as playCount
+        SELECT al.id,
+          COUNT(DISTINCT t.id) as trackCount,
+          COUNT(DISTINCT CASE WHEN t.download_status = 'downloaded' OR t.local_file_path IS NOT NULL THEN t.id END) as downloadedTracks,
+          COALESCE(SUM(le_counts.cnt), 0) as playCount
         FROM albums al
         LEFT JOIN tracks t ON t.album_id = al.id
         LEFT JOIN (
@@ -104,7 +112,7 @@ export async function GET(request: Request) {
     const total = (countResult.rows[0] as unknown as { total: number }).total
 
     type Row = {
-      id: number; name: string; artistName: string; imageUrl: string | null
+      id: number; name: string; artistName: string; spotifyId: string | null; imageUrl: string | null
       releaseDate: string | null; albumType: string | null; totalTracks: number | null
       queueStatus: string | null; trackCount: number; downloadedTracks: number
       pendingTracks: number; playCount: number; duplicateCount: number
@@ -114,6 +122,7 @@ export async function GET(request: Request) {
       id: r.id,
       name: r.name,
       artistName: r.artistName,
+      spotifyId: r.spotifyId,
       imageUrl: r.imageUrl,
       releaseDate: r.releaseDate,
       albumType: r.albumType,

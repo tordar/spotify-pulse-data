@@ -6,7 +6,7 @@ import Image from 'next/image'
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface Album {
-  id: number; name: string; artistName: string; imageUrl: string | null
+  id: number; name: string; artistName: string; spotifyId: string | null; imageUrl: string | null
   releaseDate: string | null; albumType: string | null; totalTracks: number
   queueStatus: 'queued' | 'skipped' | null
   trackCount: number; downloadedTracks: number; pendingTracks: number; playCount: number
@@ -82,6 +82,32 @@ const MIN_PLAYS_OPTIONS = [
 ]
 
 const LIMIT = 40
+
+const SPOTIFY_URL_LIST_KEY = 'spotify-pulse-sldl-url-list'
+
+type UrlListEntry = { spotifyId: string; artistName: string; albumName: string }
+
+function loadUrlList(): Map<string, UrlListEntry> {
+  if (typeof window === 'undefined') return new Map()
+  try {
+    const raw = localStorage.getItem(SPOTIFY_URL_LIST_KEY)
+    if (!raw) return new Map()
+    const arr = JSON.parse(raw) as UrlListEntry[]
+    return Array.isArray(arr) ? new Map(arr.map(e => [e.spotifyId, e])) : new Map()
+  } catch { return new Map() }
+}
+
+function saveUrlList(map: Map<string, UrlListEntry>) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(SPOTIFY_URL_LIST_KEY, JSON.stringify([...map.values()]))
+  } catch { /* ignore */ }
+}
+
+function escapeCsv(val: string): string {
+  if (val.includes(',') || val.includes('"') || val.includes('\n')) return `"${val.replace(/"/g, '""')}"`
+  return val
+}
 
 // ── Small components ───────────────────────────────────────────────────────
 
@@ -564,10 +590,18 @@ function FilterBar({ q, onQ, tabs, activeTab, onTab, sortOptions, sort, onSort, 
 
 // ── Albums view ────────────────────────────────────────────────────────────
 
-function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
+function AlbumsView({
+  selectedAlbum,
+  onSelectAlbum,
+  onQueueChange,
+  urlListSpotifyIds,
+  onToggleUrlList,
+}: {
   selectedAlbum: Album | null
   onSelectAlbum: (a: Album | null) => void
   onQueueChange: (id: number, s: 'queued' | 'skipped' | null) => void
+  urlListSpotifyIds: Set<string>
+  onToggleUrlList: (album: Album) => void
 }) {
   const [albums, setAlbums] = useState<Album[]>([])
   const [total, setTotal] = useState(0)
@@ -578,12 +612,14 @@ function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
   const [statusTab, setStatusTab] = useState('all')
   const [sort, setSort] = useState('plays')
   const [minPlays, setMinPlays] = useState(0)
+  const [hideMostlyDownloaded, setHideMostlyDownloaded] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const fetch_ = useCallback(async (query: string, status: string, sortBy: string, mp: number, off: number, append = false) => {
+  const fetch_ = useCallback(async (query: string, status: string, sortBy: string, mp: number, off: number, append = false, hideMostly = false) => {
     setLoading(true)
     try {
       const p = new URLSearchParams({ q: query, status, sort: sortBy, minPlays: String(mp), limit: String(LIMIT), offset: String(off) })
+      if (hideMostly) p.set('hideMostlyDownloaded', '1')
       const res = await fetch(`/api/download/albums?${p}`)
       const data = await res.json()
       if (append) setAlbums(prev => [...prev, ...(data.albums ?? [])])
@@ -593,16 +629,16 @@ function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
     } finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetch_(q, statusTab, sort, minPlays, 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetch_(q, statusTab, sort, minPlays, 0, false, hideMostlyDownloaded) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => fetch_(q, statusTab, sort, minPlays, 0), 300)
-  }, [q, statusTab, sort, minPlays, fetch_])
+    timer.current = setTimeout(() => fetch_(q, statusTab, sort, minPlays, 0, false, hideMostlyDownloaded), 300)
+  }, [q, statusTab, sort, minPlays, hideMostlyDownloaded, fetch_])
 
   async function loadMore() {
     const next = offset + LIMIT; setOffset(next)
-    await fetch_(q, statusTab, sort, minPlays, next, true)
+    await fetch_(q, statusTab, sort, minPlays, next, true, hideMostlyDownloaded)
   }
 
   const year = (d: string | null) => d?.slice(0, 4) ?? null
@@ -612,7 +648,18 @@ function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
       <FilterBar q={q} onQ={setQ} tabs={STATUS_TABS} activeTab={statusTab} onTab={setStatusTab}
         sortOptions={ALBUM_SORT} sort={sort} onSort={setSort}
         minPlays={minPlays} onMinPlays={setMinPlays} showMinPlays={true} />
-      <p className="text-xs text-white/30 mb-4">{total.toLocaleString()} albums</p>
+      <div className="flex flex-wrap items-center gap-4 mb-4">
+        <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hideMostlyDownloaded}
+            onChange={e => setHideMostlyDownloaded(e.target.checked)}
+            className="rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/50"
+          />
+          Hide albums with ≥50% tracks downloaded
+        </label>
+        <p className="text-xs text-white/30">{total.toLocaleString()} albums</p>
+      </div>
 
       {loading && albums.length === 0 ? (
         <div className="text-center text-white/30 py-20 text-sm">Loading…</div>
@@ -649,9 +696,23 @@ function AlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
                   {year(album.releaseDate) && <p className="text-xs text-white/30 mt-0.5">{year(album.releaseDate)}</p>}
                 </div>
                 <DownloadBar downloaded={album.downloadedTracks} total={album.trackCount} />
-                <div onClick={e => e.stopPropagation()}>
+                <div onClick={e => e.stopPropagation()} className="flex flex-wrap gap-1 mt-1">
                   <QueueButton status={album.queueStatus} pendingTracks={album.pendingTracks}
                     onChange={s => onQueueChange(album.id, s)} />
+                  {album.spotifyId && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleUrlList(album)}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                        urlListSpotifyIds.has(album.spotifyId)
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'border-white/15 text-white/60 hover:border-white/30 hover:text-white/80'
+                      }`}
+                      title={urlListSpotifyIds.has(album.spotifyId) ? 'Remove from sldl URL list' : 'Add to sldl URL list'}
+                    >
+                      {urlListSpotifyIds.has(album.spotifyId) ? '✓ In list' : '+ sldl list'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -859,6 +920,9 @@ export default function DownloadPage() {
   const [exportInfo, setExportInfo] = useState<string | null>(null)
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
   const [albums, setAlbums] = useState<Map<number, Album>>(new Map())
+  const [urlList, setUrlList] = useState<Map<string, UrlListEntry>>(new Map())
+
+  useEffect(() => { setUrlList(loadUrlList()) }, [])
 
   const fetchSummary = useCallback(async () => {
     const queuedRes = await fetch('/api/download/albums?status=queued&limit=1&offset=0')
@@ -869,6 +933,32 @@ export default function DownloadPage() {
   }, [])
 
   useEffect(() => { fetchSummary() }, [fetchSummary])
+
+  function toggleUrlList(album: Album) {
+    if (!album.spotifyId) return
+    setUrlList(prev => {
+      const next = new Map(prev)
+      if (next.has(album.spotifyId)) next.delete(album.spotifyId)
+      else next.set(album.spotifyId, { spotifyId: album.spotifyId, artistName: album.artistName, albumName: album.name })
+      saveUrlList(next)
+      return next
+    })
+  }
+
+  function exportSldlUrlListCsv() {
+    if (urlList.size === 0) return
+    const header = 'Artist,Album,Spotify URL'
+    const rows = [...urlList.values()].map(e =>
+      [escapeCsv(e.artistName), escapeCsv(e.albumName), escapeCsv(`https://open.spotify.com/album/${e.spotifyId}`)].join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'sldl-spotify-albums.csv'
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
 
   async function setQueueStatus(albumId: number, status: 'queued' | 'skipped' | null) {
     await fetch(`/api/download/albums/${albumId}/queue`, {
@@ -921,12 +1011,26 @@ export default function DownloadPage() {
                 <p className="text-white/40 text-xs">{summary.queuedTracks.toLocaleString()} tracks to download</p>
               </div>
             )}
+            {view === 'albums' && urlList.size > 0 && (
+              <button
+                type="button"
+                onClick={exportSldlUrlListCsv}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
+              >
+                Export sldl URLs ({urlList.size})
+              </button>
+            )}
             <button onClick={exportCsv} disabled={exporting}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 transition-colors">
               {exporting ? 'Generating…' : 'Export CSV'}
             </button>
           </div>
         </div>
+        {view === 'albums' && urlList.size > 0 && (
+          <p className="text-xs text-blue-400/90 text-center mt-1">
+            {urlList.size} album{urlList.size !== 1 ? 's' : ''} in sldl list — use &quot;+ sldl list&quot; on albums to add
+          </p>
+        )}
         {exportInfo && <p className="text-xs text-green-400/80 text-center mt-2">Downloaded {exportInfo}</p>}
       </div>
 
@@ -936,6 +1040,8 @@ export default function DownloadPage() {
             selectedAlbum={selectedAlbum}
             onSelectAlbum={setSelectedAlbum}
             onQueueChange={setQueueStatus}
+            urlListSpotifyIds={new Set(urlList.keys())}
+            onToggleUrlList={toggleUrlList}
           />
         )}
         {view === 'artists' && <ArtistsView />}

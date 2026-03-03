@@ -28,6 +28,7 @@ export async function GET() {
         t.name,
         a.name as artistName,
         al.name as albumName,
+        al.spotify_id as albumSpotifyId,
         t.duration_ms as durationMs
       FROM tracks t
       JOIN artists a ON a.id = t.artist_id
@@ -38,17 +39,21 @@ export async function GET() {
       ORDER BY a.name, al.name, t.disc_number, t.track_number, t.name
     `)
 
-    type Row = { name: string; artistName: string; albumName: string; durationMs: number }
+    type Row = { name: string; artistName: string; albumName: string; albumSpotifyId: string | null; durationMs: number }
     const tracks = rows as unknown as Row[]
 
-    const lines = ['Artist,Title,Album,Length']
+    const lines = ['Artist,Title,Album,Length,Spotify Album URL']
     for (const t of tracks) {
       const lengthSec = t.durationMs > 0 ? Math.round(t.durationMs / 1000) : ''
+      const spotifyUrl = t.albumSpotifyId
+        ? `https://open.spotify.com/album/${t.albumSpotifyId}`
+        : ''
       lines.push([
         escapeCsv(t.artistName),
         escapeCsv(t.name),
         escapeCsv(t.albumName),
         String(lengthSec),
+        escapeCsv(spotifyUrl),
       ].join(','))
     }
 
