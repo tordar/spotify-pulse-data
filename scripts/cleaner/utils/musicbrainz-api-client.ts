@@ -1,106 +1,46 @@
-import { MusicBrainzApi } from 'musicbrainz-api';
+const MB_BASE = 'https://musicbrainz.org/ws/2';
+const RATE_LIMIT_MS = 1100;
 
-/**
- * MusicBrainz API Client with rate limiting
- * MusicBrainz allows 1 request per second
- */
-export class MusicBrainzApiClient {
-  private mbApi: MusicBrainzApi;
-  private requestDelay = 1100; // MusicBrainz rate limit: 1 req/sec (be safe with 1.1s)
-
-  constructor() {
-    this.mbApi = new MusicBrainzApi({
-      appName: 'spotify-pulse',
-      appVersion: '1.0.0',
-      appContactInfo: 'https://github.com/tordar/spotify-pulse' // Required by MusicBrainz
-    });
-  }
-
-  /**
-   * Sleep for specified milliseconds
-   */
-  private async sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Search for an artist by name and return their genres/tags
-   */
-  async searchArtistGenres(artistName: string): Promise<string[]> {
-    try {
-      // Search for artist
-      const searchResults = await this.mbApi.search('artist', {
-        query: `"${artistName}"`,
-        limit: 1
-      });
-
-      if (!searchResults.artists || searchResults.artists.length === 0) {
-        // Respect rate limit even on no results
-        await this.sleep(this.requestDelay);
-        return [];
-      }
-
-      const artist = searchResults.artists[0];
-      
-      // Lookup full artist details with genres/tags
-      const fullArtist = await this.mbApi.lookup('artist', artist.id, ['genres', 'tags']) as any;
-      
-      // Extract genres (MusicBrainz uses both 'genres' and 'tags')
-      const genres: string[] = [];
-      
-      if (fullArtist.genres) {
-        fullArtist.genres.forEach((genre: any) => {
-          if (genre.name && !genres.includes(genre.name.toLowerCase())) {
-            genres.push(genre.name.toLowerCase());
-          }
-        });
-      }
-      
-      if (fullArtist.tags) {
-        fullArtist.tags.forEach((tag: any) => {
-          if (tag.name && !genres.includes(tag.name.toLowerCase())) {
-            genres.push(tag.name.toLowerCase());
-          }
-        });
-      }
-
-      // Respect rate limit
-      await this.sleep(this.requestDelay);
-      
-      return genres;
-    } catch (error) {
-      console.error(`❌ Error fetching MusicBrainz genres for "${artistName}":`, error);
-      // Still respect rate limit on error
-      await this.sleep(this.requestDelay);
-      return [];
-    }
-  }
-
-  /**
-   * Batch search artists (with rate limiting)
-   * Returns a map of artist name (lowercase) -> genres array
-   */
-  async searchArtistsGenres(artistNames: string[]): Promise<Map<string, string[]>> {
-    const results = new Map<string, string[]>();
-    
-    console.log(`   Fetching genres from MusicBrainz for ${artistNames.length} artists...`);
-    
-    for (let i = 0; i < artistNames.length; i++) {
-      const artistName = artistNames[i];
-      const genres = await this.searchArtistGenres(artistName);
-      
-      if (genres.length > 0) {
-        results.set(artistName.toLowerCase().trim(), genres);
-      }
-      
-      // Progress logging every 10 artists
-      if ((i + 1) % 10 === 0) {
-        console.log(`   Progress: ${i + 1}/${artistNames.length} artists processed (found ${results.size} with genres)...`);
-      }
-    }
-    
-    console.log(`✅ MusicBrainz: Found genres for ${results.size}/${artistNames.length} artists`);
-    return results;
-  }
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function mbUrlLookup(spotifyUrl: string, inc: string): Promise<any> {
+  const params = new URLSearchParams({ resource: spotifyUrl, inc, fmt: 'json' });
+  const res = await fetch(`${MB_BASE}/url?${params}`, {
+    headers: { 'User-Agent': 'spotify-pulse/1.0 (https://github.com/tordar/spotify-pulse)' },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`MusicBrainz error ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+export async function lookupTrackMbid(spotifyTrackId: string): Promise<string | null> {
+  await sleep(RATE_LIMIT_MS);
+  const data = await mbUrlLookup(
+    `https://open.spotify.com/track/${spotifyTrackId}`,
+    'recording-rels',
+  );
+  const rel = data?.relations?.find((r: any) => r.recording);
+  return rel?.recording?.id ?? null;
+}
+
+export async function lookupArtistMbid(spotifyArtistId: string): Promise<string | null> {
+  await sleep(RATE_LIMIT_MS);
+  const data = await mbUrlLookup(
+    `https://open.spotify.com/artist/${spotifyArtistId}`,
+    'artist-rels',
+  );
+  const rel = data?.relations?.find((r: any) => r.artist);
+  return rel?.artist?.id ?? null;
+}
+
+export async function lookupAlbumMbid(spotifyAlbumId: string): Promise<string | null> {
+  await sleep(RATE_LIMIT_MS);
+  const data = await mbUrlLookup(
+    `https://open.spotify.com/album/${spotifyAlbumId}`,
+    'release-rels',
+  );
+  const rel = data?.relations?.find((r: any) => r.release);
+  return rel?.release?.id ?? null;
+}
