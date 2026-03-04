@@ -41,6 +41,8 @@ data/cleaned-data/*.json
 data/library.db
 data/library.db-wal
 data/library.db-shm
+data/pending-plays/*.json
+data/pending-plays/imported/*.json
 data/sldl-input.csv
 data/sldl-results.m3u8
 data/unmatched-files.json
