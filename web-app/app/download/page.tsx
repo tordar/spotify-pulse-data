@@ -608,14 +608,14 @@ function AlbumsView({
   selectedAlbum,
   onSelectAlbum,
   onQueueChange,
-  urlListSpotifyIds,
+  urlListSpotifyIds = new Set<string>(),
   onToggleUrlList,
 }: {
   selectedAlbum: Album | null
   onSelectAlbum: (a: Album | null) => void
   onQueueChange: (id: number, s: 'queued' | 'skipped' | null) => void
-  urlListSpotifyIds: Set<string>
-  onToggleUrlList: (album: Album) => void
+  urlListSpotifyIds?: Set<string>
+  onToggleUrlList?: (album: Album) => void
 }) {
   const [albums, setAlbums] = useState<Album[]>([])
   const [total, setTotal] = useState(0)
@@ -713,7 +713,7 @@ function AlbumsView({
                 <div onClick={e => e.stopPropagation()} className="flex flex-wrap gap-1 mt-1">
                   <QueueButton status={album.queueStatus} pendingTracks={album.pendingTracks}
                     onChange={s => onQueueChange(album.id, s)} />
-                  {album.spotifyId && (
+                  {album.spotifyId && onToggleUrlList && (
                     <button
                       type="button"
                       onClick={() => onToggleUrlList(album)}
@@ -1175,6 +1175,11 @@ export default function DownloadPage() {
     })
   }
 
+  function clearUrlList() {
+    setUrlList(new Map())
+    saveUrlList(new Map())
+  }
+
   function exportSldlUrlListCsv() {
     if (urlList.size === 0) return
     const header = 'Artist,Album,Spotify URL'
@@ -1271,13 +1276,23 @@ export default function DownloadPage() {
               </>
             )}
             {view === 'albums' && urlList.size > 0 && (
-              <button
-                type="button"
-                onClick={exportSldlUrlListCsv}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
-              >
-                Export sldl URLs ({urlList.size})
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={clearUrlList}
+                  className="px-3 py-2 text-sm rounded-lg bg-white/5 text-white/50 hover:bg-red-500/15 hover:text-red-400 border border-white/10 hover:border-red-500/30 transition-colors"
+                  title="Clear sldl URL list"
+                >
+                  Clear list
+                </button>
+                <button
+                  type="button"
+                  onClick={exportSldlUrlListCsv}
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
+                >
+                  Export sldl URLs ({urlList.size})
+                </button>
+              </>
             )}
             <button onClick={exportCsv} disabled={exporting}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 transition-colors">
@@ -1309,6 +1324,8 @@ export default function DownloadPage() {
                 selectedAlbum={selectedAlbum}
                 onSelectAlbum={setSelectedAlbum}
                 onQueueChange={setQueueStatus}
+                urlListSpotifyIds={new Set(urlList.keys())}
+                onToggleUrlList={toggleUrlList}
               />
             )}
             {view === 'artists' && <ArtistsView />}

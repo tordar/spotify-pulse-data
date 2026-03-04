@@ -260,6 +260,7 @@ async function main() {
   }>;
 
   // --- 2. Fully-catalog albums (local files, zero listening history) ----------
+  // Only albums that have at least one track with local path and no spotify_id
   const fullyCatalogAlbums = db.prepare(`
     SELECT
       al.id as albumId,
@@ -271,12 +272,15 @@ async function main() {
     FROM albums al
     JOIN tracks t ON t.album_id = al.id
     WHERE t.local_file_path IS NOT NULL
+      AND (t.spotify_id IS NULL OR t.spotify_id = '')
+      AND NOT EXISTS (SELECT 1 FROM listening_events le WHERE le.track_id = t.id)
       AND NOT EXISTS (
         SELECT 1 FROM tracks t2
         JOIN listening_events le ON le.track_id = t2.id
         WHERE t2.album_id = al.id
       )
     GROUP BY al.id
+    HAVING catalogCount > 0
     ORDER BY catalogCount DESC
   `).all() as Array<{
     albumId: number; albumName: string; artistName: string;
