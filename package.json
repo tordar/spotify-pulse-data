@@ -22,7 +22,7 @@
     "db:sync-turso": "tsx scripts/db/sync-to-turso.ts",
     "db:fix-track-numbers": "tsx scripts/db/fix-catalog-track-numbers.ts",
     "db:enrich-missing-tracks": "tsx scripts/db/enrich-missing-tracks.ts",
-    "db:enrich-musicbrainz": "tsx scripts/test-musicbrainz-enrichment.ts",
+    "db:enrich-musicbrainz": "tsx scripts/musicbrainz-enrichment.ts",
     "db:search-track-ids": "tsx scripts/db/search-track-ids.ts",
     "db:enrich-from-spotify-api": "tsx scripts/db/enrich-from-spotify-api.ts",
     "db:post-download-scan": "tsx scripts/db/post-download-scan.ts",

@@ -8,20 +8,28 @@
  *   2. Fully-catalog albums — all tracks are local-only with no listening
  *      history. We search Spotify by album name + artist and enrich everything.
  *
- * Usage: npm run db:enrich-missing-tracks
+ * Usage:
+ *   npm run db:enrich-missing-tracks              # automatic only
+ *   npm run db:enrich-missing-tracks -- -i        # automatic + interactive
+ *
  * Requires: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN
  */
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as readline from 'readline';
 
-// Load both .env and .env.local so Spotify credentials are available
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') });
 
 import Database from 'better-sqlite3';
 import { SpotifyTokenManager } from '../spotify-token-manager';
+import { queryBeetsLibrary } from './beets-lookup';
+import {
+  searchMusicBrainzRelease,
+  getSpotifyIdFromRelease,
+} from '../cleaner/utils/musicbrainz-api-client';
 
 const DB_PATH = path.join(__dirname, '..', '..', 'data', 'library.db');
 
@@ -52,10 +60,37 @@ interface SpotifyTrack {
   disc_number: number;
 }
 
+interface CatalogTrack {
+  id: number;
+  name: string;
+  duration_ms: number;
+}
+
 interface SpotifyAlbumTracksResponse {
   items: SpotifyTrack[];
   next: string | null;
   total: number;
+}
+
+interface AlbumInfo {
+  albumId: number;
+  albumName: string;
+  artistName: string;
+  albumSpotifyId: string | null;
+  catalogCount: number;
+}
+
+interface UnmatchedData {
+  localTracks: CatalogTrack[];
+  spotifyTracks: SpotifyTrack[];
+  resolvedAlbumId: string | null;
+}
+
+interface ProcessResult {
+  enriched: number;
+  refreshedId: boolean;
+  unmatched: UnmatchedData | null;
+  noSpotifyMatch: boolean;
 }
 
 async function spotifyGet<T>(url: string, token: string): Promise<T> {
@@ -75,7 +110,7 @@ async function fetchAllAlbumTracks(albumSpotifyId: string, token: string): Promi
   const tracks: SpotifyTrack[] = [];
   let url: string | null = `https://api.spotify.com/v1/albums/${albumSpotifyId}/tracks?limit=50`;
   while (url) {
-    const data = await spotifyGet<SpotifyAlbumTracksResponse>(url, token);
+    const data: SpotifyAlbumTracksResponse = await spotifyGet<SpotifyAlbumTracksResponse>(url, token);
     tracks.push(...data.items);
     url = data.next;
   }
@@ -153,14 +188,13 @@ function matchTrack(
 }
 
 async function processAlbum(
-  album: { albumId: number; albumName: string; artistName: string; albumSpotifyId: string | null },
+  album: AlbumInfo,
   token: string,
   db: Database.Database,
   updateTrack: Database.Statement,
   updateAlbumSpotifyId: Database.Statement,
   getBySpotifyId: Database.Statement<[string]>,
-): Promise<{ enriched: number; refreshedId: boolean }> {
-  // Catalog tracks for this album
+): Promise<ProcessResult> {
   const catalogTracks = db.prepare(`
     SELECT t.id, t.name, t.duration_ms
     FROM tracks t
@@ -168,9 +202,11 @@ async function processAlbum(
       AND t.spotify_id IS NULL
       AND t.local_file_path IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM listening_events le WHERE le.track_id = t.id)
-  `).all(album.albumId) as Array<{ id: number; name: string; duration_ms: number }>;
+  `).all(album.albumId) as CatalogTrack[];
 
-  if (catalogTracks.length === 0) return { enriched: 0, refreshedId: false };
+  if (catalogTracks.length === 0) {
+    return { enriched: 0, refreshedId: false, unmatched: null, noSpotifyMatch: false };
+  }
 
   let resolvedAlbumId = album.albumSpotifyId;
   let spotifyTracks: SpotifyTrack[];
@@ -184,14 +220,23 @@ async function processAlbum(
     } catch (err: unknown) {
       if ((err as { status?: number }).status !== 404) throw err;
       const found = await trySearch();
-      if (!found) return { enriched: 0, refreshedId: false };
+      if (!found) {
+        return {
+          enriched: 0, refreshedId: false, noSpotifyMatch: true,
+          unmatched: { localTracks: catalogTracks, spotifyTracks: [], resolvedAlbumId: null },
+        };
+      }
       resolvedAlbumId = found;
       spotifyTracks = await tryFetch(resolvedAlbumId);
     }
   } else {
-    // Fully-catalog album: must search
     const found = await trySearch();
-    if (!found) return { enriched: 0, refreshedId: false };
+    if (!found) {
+      return {
+        enriched: 0, refreshedId: false, noSpotifyMatch: true,
+        unmatched: { localTracks: catalogTracks, spotifyTracks: [], resolvedAlbumId: null },
+      };
+    }
     resolvedAlbumId = found;
     spotifyTracks = await tryFetch(resolvedAlbumId);
   }
@@ -200,6 +245,7 @@ async function processAlbum(
 
   let enriched = 0;
   const usedIds = new Set<string>();
+  const matchedLocalIds = new Set<number>();
 
   db.transaction(() => {
     for (const catalog of catalogTracks) {
@@ -207,26 +253,251 @@ async function processAlbum(
       if (!match) continue;
 
       const existing = (getBySpotifyId as Database.Statement<[string], { id: number }>).get(match.id);
-      if (existing && existing.id !== catalog.id) continue; // already assigned elsewhere
+      if (existing && existing.id !== catalog.id) continue;
 
       usedIds.add(match.id);
+      matchedLocalIds.add(catalog.id);
       updateTrack.run(match.id, match.duration_ms, match.track_number, match.disc_number, catalog.id);
       enriched++;
+    }
+
+    // "Last remaining" auto-match: 1 unmatched local + 1 unmatched Spotify
+    const remainingLocal = catalogTracks.filter(t => !matchedLocalIds.has(t.id));
+    const remainingSpotify = spotifyTracks.filter(t => !usedIds.has(t.id));
+    if (remainingLocal.length === 1 && remainingSpotify.length === 1) {
+      const local = remainingLocal[0];
+      const sp = remainingSpotify[0];
+      const existing = (getBySpotifyId as Database.Statement<[string], { id: number }>).get(sp.id);
+      if (!existing || existing.id === local.id) {
+        usedIds.add(sp.id);
+        matchedLocalIds.add(local.id);
+        updateTrack.run(sp.id, sp.duration_ms, sp.track_number, sp.disc_number, local.id);
+        enriched++;
+      }
     }
   })();
 
   const refreshedId = resolvedAlbumId !== album.albumSpotifyId;
-  if (resolvedAlbumId && refreshedId) {
-    updateAlbumSpotifyId.run(resolvedAlbumId, album.albumId);
-  } else if (!album.albumSpotifyId && resolvedAlbumId) {
-    // Newly discovered album ID for a fully-catalog album
+  if (resolvedAlbumId && (refreshedId || !album.albumSpotifyId)) {
     updateAlbumSpotifyId.run(resolvedAlbumId, album.albumId);
   }
 
-  return { enriched, refreshedId };
+  const unmatchedLocal = catalogTracks.filter(t => !matchedLocalIds.has(t.id));
+  const unmatchedSpotify = spotifyTracks.filter(t => !usedIds.has(t.id));
+
+  return {
+    enriched,
+    refreshedId,
+    noSpotifyMatch: false,
+    unmatched: unmatchedLocal.length > 0
+      ? { localTracks: unmatchedLocal, spotifyTracks: unmatchedSpotify, resolvedAlbumId }
+      : null,
+  };
 }
 
+// ---------------------------------------------------------------------------
+// Interactive CLI helpers
+// ---------------------------------------------------------------------------
+
+function formatDuration(ms: number): string {
+  if (!ms || ms <= 0) return '?:??';
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function ask(rl: readline.Interface, prompt: string): Promise<string> {
+  return new Promise(resolve => rl.question(prompt, resolve));
+}
+
+const LABELS = 'abcdefghijklmnopqrstuvwxyz';
+
+async function runInteractiveMode(
+  unmatchedAlbums: Array<{ album: AlbumInfo; unmatched: UnmatchedData }>,
+  db: Database.Database,
+  updateTrack: Database.Statement,
+  getBySpotifyId: Database.Statement<[string]>,
+): Promise<number> {
+  if (unmatchedAlbums.length === 0) {
+    console.log('\nNo unmatched tracks remaining for interactive matching.');
+    return 0;
+  }
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  let totalMatched = 0;
+
+  console.log(`\n━━━ Interactive matching: ${unmatchedAlbums.length} albums with unmatched tracks ━━━\n`);
+
+  for (const { album, unmatched } of unmatchedAlbums) {
+    const { localTracks, spotifyTracks } = unmatched;
+
+    console.log(`━━━ ${album.artistName} — ${album.albumName} (${localTracks.length} unmatched) ━━━\n`);
+
+    if (spotifyTracks.length === 0) {
+      console.log('  No Spotify tracks available to match against.\n');
+      continue;
+    }
+
+    console.log('  Unmatched local tracks:');
+    localTracks.forEach((t, i) => {
+      console.log(`    ${i + 1}. ${t.name} (${formatDuration(t.duration_ms)})`);
+    });
+
+    console.log('\n  Available Spotify tracks:');
+    spotifyTracks.forEach((t, i) => {
+      const label = i < LABELS.length ? LABELS[i] : String(i);
+      console.log(`    ${label}. ${t.name} (${formatDuration(t.duration_ms)})`);
+    });
+
+    console.log('\n  Enter pairs (e.g. "1a 2b 3c"), [s]kip album, or [q]uit');
+    const answer = (await ask(rl, '  > ')).trim().toLowerCase();
+
+    if (answer === 'q') {
+      console.log('\nQuitting interactive mode.');
+      break;
+    }
+    if (answer === 's' || answer === '') {
+      console.log('  Skipped.\n');
+      continue;
+    }
+
+    const pairRegex = /(\d+)([a-z])/g;
+    let pairMatch: RegExpExecArray | null;
+    let albumMatched = 0;
+
+    db.transaction(() => {
+      while ((pairMatch = pairRegex.exec(answer)) !== null) {
+        const localIdx = parseInt(pairMatch[1]) - 1;
+        const spotifyIdx = LABELS.indexOf(pairMatch[2]);
+
+        if (localIdx < 0 || localIdx >= localTracks.length) {
+          console.log(`    ⚠ Invalid local track number: ${pairMatch[1]}`);
+          continue;
+        }
+        if (spotifyIdx < 0 || spotifyIdx >= spotifyTracks.length) {
+          console.log(`    ⚠ Invalid Spotify track letter: ${pairMatch[2]}`);
+          continue;
+        }
+
+        const local = localTracks[localIdx];
+        const sp = spotifyTracks[spotifyIdx];
+
+        const existing = (getBySpotifyId as Database.Statement<[string], { id: number }>).get(sp.id);
+        if (existing && existing.id !== local.id) {
+          console.log(`    ⚠ Spotify track "${sp.name}" already assigned to another track`);
+          continue;
+        }
+
+        updateTrack.run(sp.id, sp.duration_ms, sp.track_number, sp.disc_number, local.id);
+        console.log(`    ✓ ${local.name} → ${sp.name}`);
+        albumMatched++;
+      }
+    })();
+
+    totalMatched += albumMatched;
+    console.log(albumMatched > 0 ? `  Matched ${albumMatched} track(s).\n` : '  No valid pairs entered.\n');
+  }
+
+  rl.close();
+  return totalMatched;
+}
+
+// ---------------------------------------------------------------------------
+// Beets / MusicBrainz fallback: try to discover Spotify album IDs for albums
+// that Spotify search couldn't find, using beets DB → MusicBrainz → Spotify.
+// ---------------------------------------------------------------------------
+
+async function runBeetsMbFallback(
+  entries: Array<{ album: AlbumInfo; unmatched: UnmatchedData }>,
+  tokenManager: SpotifyTokenManager,
+  db: Database.Database,
+  updateTrack: Database.Statement,
+  updateAlbumSpotifyId: Database.Statement,
+  getBySpotifyId: Database.Statement<[string]>,
+): Promise<number> {
+  let totalEnriched = 0;
+
+  for (const entry of entries) {
+    const { album } = entry;
+
+    // 1. Try beets DB
+    const beetsResult = queryBeetsLibrary(album.albumName, album.artistName);
+    let mbReleaseId = beetsResult?.mbAlbumId ?? null;
+
+    // 2. Try MusicBrainz search if beets didn't have it
+    if (!mbReleaseId) {
+      try {
+        mbReleaseId = await searchMusicBrainzRelease(album.albumName, album.artistName);
+      } catch { /* rate limit or network error — skip */ }
+    }
+
+    if (!mbReleaseId) continue;
+
+    // 3. Get Spotify album ID from MB release URL relationships
+    let spotifyAlbumId: string | null = null;
+    try {
+      spotifyAlbumId = await getSpotifyIdFromRelease(mbReleaseId);
+    } catch { /* skip */ }
+
+    if (!spotifyAlbumId) continue;
+
+    // 4. Fetch Spotify tracks and run automatic matching
+    try {
+      const token = await tokenManager.getValidAccessToken();
+      const spotifyTracks = await fetchAllAlbumTracks(spotifyAlbumId, token);
+
+      const usedIds = new Set<string>();
+      const matchedLocalIds = new Set<number>();
+
+      db.transaction(() => {
+        for (const local of entry.unmatched.localTracks) {
+          const m = matchTrack(local.name, local.duration_ms, spotifyTracks, usedIds);
+          if (!m) continue;
+          const existing = (getBySpotifyId as Database.Statement<[string], { id: number }>).get(m.id);
+          if (existing && existing.id !== local.id) continue;
+          usedIds.add(m.id);
+          matchedLocalIds.add(local.id);
+          updateTrack.run(m.id, m.duration_ms, m.track_number, m.disc_number, local.id);
+        }
+
+        // Last remaining
+        const rl = entry.unmatched.localTracks.filter(t => !matchedLocalIds.has(t.id));
+        const rs = spotifyTracks.filter(t => !usedIds.has(t.id));
+        if (rl.length === 1 && rs.length === 1) {
+          const existing = (getBySpotifyId as Database.Statement<[string], { id: number }>).get(rs[0].id);
+          if (!existing || existing.id === rl[0].id) {
+            usedIds.add(rs[0].id);
+            matchedLocalIds.add(rl[0].id);
+            updateTrack.run(rs[0].id, rs[0].duration_ms, rs[0].track_number, rs[0].disc_number, rl[0].id);
+          }
+        }
+      })();
+
+      updateAlbumSpotifyId.run(spotifyAlbumId, album.albumId);
+
+      const matched = matchedLocalIds.size;
+      totalEnriched += matched;
+
+      // Update unmatched lists for interactive phase
+      entry.unmatched.localTracks = entry.unmatched.localTracks.filter(t => !matchedLocalIds.has(t.id));
+      entry.unmatched.spotifyTracks = spotifyTracks.filter(t => !usedIds.has(t.id));
+      entry.unmatched.resolvedAlbumId = spotifyAlbumId;
+
+      if (matched > 0) {
+        console.log(`  ✓ ${album.artistName} — ${album.albumName}: +${matched} (via beets/MusicBrainz)`);
+      }
+    } catch { /* fetch error — skip */ }
+  }
+
+  return totalEnriched;
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
 async function main() {
+  const interactive = process.argv.includes('-i') || process.argv.includes('--interactive');
+
   if (!fs.existsSync(DB_PATH)) {
     console.error(`library.db not found at ${DB_PATH}`);
     process.exit(1);
@@ -236,7 +507,6 @@ async function main() {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // --- 1. Mixed albums (some listened, some local-only) ----------------------
   const mixedAlbums = db.prepare(`
     SELECT
       al.id as albumId,
@@ -254,13 +524,8 @@ async function main() {
     GROUP BY al.id
     HAVING trackedCount > 0 AND catalogCount > 0
     ORDER BY catalogCount DESC
-  `).all() as Array<{
-    albumId: number; albumName: string; artistName: string;
-    albumSpotifyId: string; trackedCount: number; catalogCount: number;
-  }>;
+  `).all() as Array<AlbumInfo & { trackedCount: number }>;
 
-  // --- 2. Fully-catalog albums (local files, zero listening history) ----------
-  // Only albums that have at least one track with local path and no spotify_id
   const fullyCatalogAlbums = db.prepare(`
     SELECT
       al.id as albumId,
@@ -282,12 +547,9 @@ async function main() {
     GROUP BY al.id
     HAVING catalogCount > 0
     ORDER BY catalogCount DESC
-  `).all() as Array<{
-    albumId: number; albumName: string; artistName: string;
-    albumSpotifyId: string | null; trackedCount: number; catalogCount: number;
-  }>;
+  `).all() as Array<AlbumInfo & { trackedCount: number }>;
 
-  const allAlbums = [...mixedAlbums, ...fullyCatalogAlbums];
+  const allAlbums: AlbumInfo[] = [...mixedAlbums, ...fullyCatalogAlbums];
   console.log(`Mixed albums to process:          ${mixedAlbums.length}`);
   console.log(`Fully-catalog albums to process:  ${fullyCatalogAlbums.length}`);
   console.log(`Total:                            ${allAlbums.length}\n`);
@@ -312,31 +574,61 @@ async function main() {
   let totalEnriched = 0;
   let totalAlbumsProcessed = 0;
   let noResult = 0;
+  const unmatchedAlbums: Array<{ album: AlbumInfo; unmatched: UnmatchedData }> = [];
+
+  // --- Phase 1: Automatic matching ------------------------------------------
 
   for (const album of allAlbums) {
     const token = await tokenManager.getValidAccessToken();
     try {
-      const { enriched, refreshedId } = await processAlbum(
+      const result = await processAlbum(
         album, token, db, updateTrack, updateAlbumSpotifyId, getBySpotifyId
       );
-      if (enriched > 0) {
-        const tag = refreshedId || !album.albumSpotifyId ? ' (found via search)' : '';
-        console.log(`  ✓ ${album.artistName} — ${album.albumName}: +${enriched}/${album.catalogCount}${tag}`);
-        totalEnriched += enriched;
+      if (result.enriched > 0) {
+        const tag = result.refreshedId || !album.albumSpotifyId ? ' (found via search)' : '';
+        console.log(`  ✓ ${album.artistName} — ${album.albumName}: +${result.enriched}/${album.catalogCount}${tag}`);
+        totalEnriched += result.enriched;
         totalAlbumsProcessed++;
+      }
+      if (result.unmatched) {
+        unmatchedAlbums.push({ album, unmatched: result.unmatched });
       }
     } catch (err) {
       noResult++;
-      // Silence "no search result" noise for fully-catalog albums — expected for many
       if (String(err).includes('404')) {
-        // already tried search inside processAlbum; if it throws it's a real error
         console.error(`  ✗ ${album.artistName} — ${album.albumName}: ${err}`);
       }
     }
   }
 
-  console.log(`\nEnriched ${totalEnriched} tracks across ${totalAlbumsProcessed} albums`);
+  console.log(`\nPhase 1 (automatic): enriched ${totalEnriched} tracks across ${totalAlbumsProcessed} albums`);
   console.log(`Albums with no Spotify match: ~${noResult + (allAlbums.length - totalAlbumsProcessed - noResult)}`);
+  if (unmatchedAlbums.length > 0) {
+    const unmatchedTrackCount = unmatchedAlbums.reduce((s, a) => s + a.unmatched.localTracks.length, 0);
+    console.log(`Albums with remaining unmatched tracks: ${unmatchedAlbums.length} (${unmatchedTrackCount} tracks)`);
+  }
+
+  // --- Phase 2 (interactive mode only): Beets/MB fallback + manual matching --
+
+  if (interactive) {
+    const albumsNeedingFallback = unmatchedAlbums.filter(a => a.unmatched.spotifyTracks.length === 0);
+
+    if (albumsNeedingFallback.length > 0) {
+      console.log(`\nAttempting beets/MusicBrainz fallback for ${albumsNeedingFallback.length} albums…`);
+      const fallbackEnriched = await runBeetsMbFallback(
+        albumsNeedingFallback, tokenManager, db, updateTrack, updateAlbumSpotifyId, getBySpotifyId
+      );
+      totalEnriched += fallbackEnriched;
+    }
+
+    const stillUnmatched = unmatchedAlbums.filter(a => a.unmatched.localTracks.length > 0);
+    const interactiveMatched = await runInteractiveMode(stillUnmatched, db, updateTrack, getBySpotifyId);
+    totalEnriched += interactiveMatched;
+  }
+
+  // --- Summary ---------------------------------------------------------------
+
+  console.log(`\nTotal enriched: ${totalEnriched} tracks`);
 
   const breakdown = db.prepare(
     `SELECT download_status, COUNT(*) as c FROM tracks GROUP BY download_status`
