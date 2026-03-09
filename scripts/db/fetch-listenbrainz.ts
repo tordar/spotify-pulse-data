@@ -43,15 +43,16 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-async function fetchPage(username: string, minTs?: number, maxTs?: number): Promise<LBListensResponse> {
+async function fetchPage(username: string, maxTs?: number): Promise<LBListensResponse> {
   const params = new URLSearchParams({ count: String(PAGE_SIZE) });
-  if (minTs != null) params.set('min_ts', String(minTs));
   if (maxTs != null) params.set('max_ts', String(maxTs));
 
   const url = `${LB_BASE}/user/${encodeURIComponent(username)}/listens?${params}`;
-  const resp = await fetch(url, {
-    headers: { 'User-Agent': 'spotify-pulse/1.0' },
-  });
+  const headers: Record<string, string> = { 'User-Agent': 'spotify-pulse/1.0' };
+  const token = process.env.LISTENBRAINZ_TOKEN;
+  if (token) headers['Authorization'] = `Token ${token}`;
+
+  const resp = await fetch(url, { headers });
 
   if (!resp.ok) {
     throw new Error(`ListenBrainz API error: ${resp.status} ${await resp.text()}`);
@@ -60,14 +61,27 @@ async function fetchPage(username: string, minTs?: number, maxTs?: number): Prom
   return resp.json() as Promise<LBListensResponse>;
 }
 
-function getLastFetchTimestamp(db: Database.Database): number | null {
-  const row = db.prepare(`
+function getCutoffTimestamp(db: Database.Database): number {
+  // First check if we've fetched from ListenBrainz before
+  const lbRow = db.prepare(`
     SELECT source_identifier FROM import_log
     WHERE source = 'listenbrainz'
     ORDER BY imported_at DESC LIMIT 1
   `).get() as { source_identifier: string } | undefined;
 
-  return row ? parseInt(row.source_identifier, 10) : null;
+  if (lbRow) return parseInt(lbRow.source_identifier, 10);
+
+  // Otherwise use the latest listening event from any source,
+  // so we don't re-import history that's already in the DB from Spotify
+  const row = db.prepare(`
+    SELECT MAX(played_at) as latest FROM listening_events
+  `).get() as { latest: string | null } | undefined;
+
+  if (row?.latest) {
+    return Math.floor(new Date(row.latest).getTime() / 1000);
+  }
+
+  return 0;
 }
 
 function findTrackInDb(
@@ -116,29 +130,39 @@ async function fetchListenBrainz(username?: string): Promise<void> {
   }
 
   const db = getDatabase();
-  const lastTs = getLastFetchTimestamp(db);
-  const minTs = lastTs ?? 0;
+  const minTs = getCutoffTimestamp(db);
 
   console.log(`Fetching listens for user "${lbUser}" since ${minTs > 0 ? new Date(minTs * 1000).toISOString() : 'the beginning'}...`);
 
   let allListens: LBListen[] = [];
   let maxTs: number | undefined;
   let page = 0;
+  let reachedCutoff = false;
 
-  // Paginate backwards from newest
+  // Paginate backwards from newest using only max_ts
+  // (ListenBrainz API forbids using min_ts and max_ts together)
   while (true) {
-    const data = await fetchPage(lbUser, minTs > 0 ? minTs : undefined, maxTs);
+    const data = await fetchPage(lbUser, maxTs);
     const listens = data.payload.listens;
     page++;
 
     if (listens.length === 0) break;
-    allListens.push(...listens);
 
-    console.log(`  Page ${page}: ${listens.length} listens (total so far: ${allListens.length})`);
+    // Filter out listens at or before the last import timestamp
+    const newListens = minTs > 0
+      ? listens.filter(l => l.listened_at > minTs)
+      : listens;
+
+    allListens.push(...newListens);
+    console.log(`  Page ${page}: ${listens.length} fetched, ${newListens.length} new (total so far: ${allListens.length})`);
+
+    if (newListens.length < listens.length) {
+      reachedCutoff = true;
+      break;
+    }
 
     if (listens.length < PAGE_SIZE) break;
 
-    // Next page: go further back in time
     maxTs = listens[listens.length - 1].listened_at;
 
     // Rate limit courtesy
@@ -187,13 +211,19 @@ async function fetchListenBrainz(username?: string): Promise<void> {
         created++;
       }
 
-      insertListeningEvent(
-        db,
-        trackId,
-        playedAt,
-        meta.additional_info?.duration_ms || 0,
-        'listenbrainz',
-      );
+      const alreadyExists = db.prepare(
+        `SELECT 1 FROM listening_events WHERE track_id = ? AND played_at = ? AND source = 'listenbrainz' LIMIT 1`
+      ).get(trackId, playedAt);
+
+      if (!alreadyExists) {
+        insertListeningEvent(
+          db,
+          trackId,
+          playedAt,
+          meta.additional_info?.duration_ms || 0,
+          'listenbrainz',
+        );
+      }
 
       if (listen.listened_at > latestTs) {
         latestTs = listen.listened_at;
