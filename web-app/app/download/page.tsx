@@ -1022,6 +1022,7 @@ function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
       id: a.localId,
       name: a.name,
       artistName: a.artistName,
+      spotifyId: a.spotifyId,
       imageUrl: a.imageUrl,
       releaseDate: a.releaseDate,
       albumType: a.albumType,
