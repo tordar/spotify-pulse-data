@@ -402,7 +402,7 @@ async function main() {
   console.log(`Tracks   with disc_number: ${stats.tracks_with_disc.toLocaleString()}`);
 
   db.close();
-  console.log('\nDone. Run `npm run db:sync-turso` to push to production.');
+  console.log('\nDone. Run `npm run db:sync-d1` to push to production.');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

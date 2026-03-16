@@ -41,7 +41,7 @@ export async function GET() {
       .sort((a, b) => b.count - a.count)
 
     return NextResponse.json({
-      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
+      metadata: { timestamp: new Date().toISOString(), source: 'Cloudflare D1' },
       genres,
     })
   } catch (error) {

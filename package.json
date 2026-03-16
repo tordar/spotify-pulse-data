@@ -18,8 +18,8 @@
     "db:scan-files": "tsx scripts/db/scan-local-files.ts",
     "db:enrich": "tsx scripts/db/enrich-from-cleaned.ts",
     "db:fetch-listenbrainz": "tsx scripts/db/fetch-listenbrainz.ts",
-    "db:pull-from-turso": "tsx scripts/db/pull-from-turso.ts",
-    "db:sync-turso": "tsx scripts/db/sync-to-turso.ts",
+    "db:pull-from-d1": "tsx scripts/db/pull-from-d1.ts",
+    "db:sync-d1": "tsx scripts/db/sync-to-d1.ts",
     "db:fix-track-numbers": "tsx scripts/db/fix-catalog-track-numbers.ts",
     "db:enrich-missing-tracks": "tsx scripts/db/enrich-missing-tracks.ts",
     "db:enrich-musicbrainz": "tsx scripts/musicbrainz-enrichment.ts",
@@ -46,7 +46,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/cli-progress": "^3.11.6",
     "@types/commander": "^2.12.0",

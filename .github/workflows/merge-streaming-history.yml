@@ -72,12 +72,13 @@ jobs:
           npm run add-podcast-data
           npm run db:enrich
 
-      - name: Sync rebuilt database to Turso
+      - name: Sync rebuilt database to D1
         if: steps.check-files.outputs.files_exist == 'true'
         env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: npm run db:sync-turso
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run db:sync-d1
 
       - name: Pull latest changes
         if: steps.check-files.outputs.files_exist == 'true' && github.event_name == 'push'

@@ -6,8 +6,9 @@ export async function GET() {
     nodeVersion: process.version,
     platform: process.platform,
     arch: process.arch,
-    hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
-    hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
+    hasD1AccountId: !!process.env.CLOUDFLARE_ACCOUNT_ID,
+    hasD1DatabaseId: !!process.env.CLOUDFLARE_D1_DATABASE_ID,
+    hasD1ApiToken: !!process.env.CLOUDFLARE_API_TOKEN,
   }
 
   try {

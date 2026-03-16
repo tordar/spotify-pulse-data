@@ -1,21 +1,21 @@
-import { createClient, type Client } from '@libsql/client'
+import { createD1Client, type D1Client } from './d1-client'
 
-let _client: Client | null = null
+let _client: D1Client | null = null
 
-export function getDb(): Client {
+export function getDb(): D1Client {
   if (_client) return _client
 
-  const url = process.env.TURSO_DATABASE_URL
-  const authToken = process.env.TURSO_AUTH_TOKEN
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+  const databaseId = process.env.CLOUDFLARE_D1_DATABASE_ID
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN
 
-  if (!url) {
+  if (!accountId || !databaseId || !apiToken) {
     throw new Error(
-      'TURSO_DATABASE_URL is not set. ' +
-      'Add it to Vercel project settings or .env.local for local dev.'
+      'Cloudflare D1 env vars missing. Set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID, and CLOUDFLARE_API_TOKEN.'
     )
   }
 
-  _client = createClient({ url, authToken })
+  _client = createD1Client({ accountId, databaseId, apiToken })
   return _client
 }
 

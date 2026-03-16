@@ -39,7 +39,7 @@ export async function GET() {
     }>
 
     if (albums.length === 0) {
-      return NextResponse.json({ metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' }, albums: [] })
+      return NextResponse.json({ metadata: { timestamp: new Date().toISOString(), source: 'Cloudflare D1' }, albums: [] })
     }
 
     // Fetch all songs for these albums in one query to avoid N+1 HTTP calls
@@ -134,7 +134,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
+      metadata: { timestamp: new Date().toISOString(), source: 'Cloudflare D1' },
       albums: result,
     })
   } catch (error) {

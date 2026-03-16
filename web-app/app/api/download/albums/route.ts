@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       )
     `
 
-    // Ensure queue_status column exists (may be missing from older Turso deployments)
+    // Ensure queue_status column exists (may be missing from older D1 deployments)
     try {
       await db.execute(`ALTER TABLE albums ADD COLUMN queue_status TEXT CHECK(queue_status IN ('queued','skipped')) DEFAULT NULL`)
     } catch { /* already exists */ }

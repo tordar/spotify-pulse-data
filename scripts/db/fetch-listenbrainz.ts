@@ -216,13 +216,12 @@ async function fetchListenBrainz(username?: string): Promise<void> {
       ).get(trackId, playedAt);
 
       if (!alreadyExists) {
-        insertListeningEvent(
-          db,
-          trackId,
-          playedAt,
-          meta.additional_info?.duration_ms || 0,
-          'listenbrainz',
-        );
+        let msPlayed = meta.additional_info?.duration_ms;
+        if (!msPlayed) {
+          const track = db.prepare(`SELECT duration_ms FROM tracks WHERE id = ?`).get(trackId) as { duration_ms: number } | undefined;
+          msPlayed = track?.duration_ms || 0;
+        }
+        insertListeningEvent(db, trackId, playedAt, msPlayed, 'listenbrainz');
       }
 
       if (listen.listened_at > latestTs) {

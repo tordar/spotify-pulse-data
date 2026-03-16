@@ -58,7 +58,7 @@ export async function GET() {
     }))
 
     return NextResponse.json({
-      metadata: { timestamp: new Date().toISOString(), source: 'Turso Database' },
+      metadata: { timestamp: new Date().toISOString(), source: 'Cloudflare D1' },
       songs: result,
     })
   } catch (error) {

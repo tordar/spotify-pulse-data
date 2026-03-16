@@ -203,7 +203,7 @@ async function postDownloadScan(musicDir: string, files: string[]): Promise<void
   }
 
   if (matched > 0) {
-    console.log(`\n  Run 'npm run db:sync-turso' to push changes to Turso.`);
+    console.log(`\n  Run 'npm run db:sync-d1' to push changes to D1.`);
   }
 
   closeDatabase();
