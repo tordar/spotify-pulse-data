@@ -940,11 +940,19 @@ const SAVED_STATUS_TABS = [
   { key: 'complete', label: '≥ 50% downloaded' },
 ]
 
-function SavedAlbumsView({ selectedAlbum, onSelectAlbum, onQueueChange }: {
-  selectedAlbum: Album | null
-  onSelectAlbum: (a: Album | null) => void
-  onQueueChange: (id: number, s: 'queued' | 'skipped' | null) => void
-}) {
+ function SavedAlbumsView({
+   selectedAlbum,
+   onSelectAlbum,
+   onQueueChange,
+   urlListSpotifyIds = new Set<string>(),
+   onToggleUrlList,
+ }: {
+   selectedAlbum: Album | null
+   onSelectAlbum: (a: Album | null) => void
+   onQueueChange: (id: number, s: 'queued' | 'skipped' | null) => void
+   urlListSpotifyIds?: Set<string>
+   onToggleUrlList?: (album: Album) => void
+ }) {
   const [albums, setAlbums] = useState<SavedAlbum[]>([])
   const [total, setTotal] = useState(0)
   const [offset, setOffset] = useState(0)
