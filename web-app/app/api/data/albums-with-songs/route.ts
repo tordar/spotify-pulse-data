@@ -42,31 +42,39 @@ export async function GET() {
       return NextResponse.json({ metadata: { timestamp: new Date().toISOString(), source: 'Cloudflare D1' }, albums: [] })
     }
 
-    // Fetch all songs for these albums in one query to avoid N+1 HTTP calls
+    // Fetch all songs for these albums, batching to avoid SQLite/D1 variable limits
     const albumIds = albums.map(a => a.albumId)
-    const placeholders = albumIds.map(() => '?').join(', ')
-    const { rows: songRows } = await db.execute({
-      sql: `
-        SELECT
-          t.album_id,
-          t.id,
-          t.spotify_id as songId,
-          t.name,
-          t.duration_ms,
-          t.track_number,
-          t.disc_number,
-          a.name as artistName,
-          COUNT(le.id) as playCount,
-          SUM(le.ms_played) as totalListeningTimeMs
-        FROM tracks t
-        JOIN artists a ON a.id = t.artist_id
-        LEFT JOIN listening_events le ON le.track_id = t.id
-        WHERE t.album_id IN (${placeholders})
-        GROUP BY t.id
-        ORDER BY t.album_id, t.disc_number, t.track_number, t.name
-      `,
-      args: albumIds,
-    })
+    // Keep batches small to avoid hitting SQLite / D1 variable limits (e.g. 999)
+    const BATCH_SIZE = 50
+    let songRows: unknown[] = []
+
+    for (let i = 0; i < albumIds.length; i += BATCH_SIZE) {
+      const batchIds = albumIds.slice(i, i + BATCH_SIZE)
+      const placeholders = batchIds.map(() => '?').join(', ')
+      const { rows } = await db.execute({
+        sql: `
+          SELECT
+            t.album_id,
+            t.id,
+            t.spotify_id as songId,
+            t.name,
+            t.duration_ms,
+            t.track_number,
+            t.disc_number,
+            a.name as artistName,
+            COUNT(le.id) as playCount,
+            SUM(le.ms_played) as totalListeningTimeMs
+          FROM tracks t
+          JOIN artists a ON a.id = t.artist_id
+          LEFT JOIN listening_events le ON le.track_id = t.id
+          WHERE t.album_id IN (${placeholders})
+          GROUP BY t.id
+          ORDER BY t.album_id, t.disc_number, t.track_number, t.name
+        `,
+        args: batchIds,
+      })
+      songRows = songRows.concat(rows as unknown[])
+    }
 
     type SongRow = {
       album_id: number; id: number; songId: string | null; name: string;
