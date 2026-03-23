@@ -2,10 +2,10 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Disc, Music2, Users, BarChart3, Search, X, Network, Settings } from 'lucide-react'
+import { Disc, Music2, Users, BarChart3, Search, X, Sparkles, Settings } from 'lucide-react'
 import { useSpotifyStats } from './SpotifyStatsContext'
 
-type SpotifyStatsPage = 'albums' | 'songs' | 'artists' | 'stats' | 'genres' | 'settings'
+type SpotifyStatsPage = 'albums' | 'songs' | 'artists' | 'stats' | 'releases' | 'settings'
 
 interface SpotifyStatsNavProps {
   currentPage: SpotifyStatsPage
@@ -17,7 +17,7 @@ interface SpotifyStatsNavProps {
 
 export default function SpotifyStatsNav({ currentPage, compact = false, largeLinks = false, hideSearch = false }: SpotifyStatsNavProps) {
   const { searchTerm, setSearchTerm } = useSpotifyStats()
-  const showSearch = currentPage !== 'stats' && currentPage !== 'genres' && currentPage !== 'settings'
+  const showSearch = currentPage !== 'stats' && currentPage !== 'releases' && currentPage !== 'settings'
   const navRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const [searchWidth, setSearchWidth] = useState<number | undefined>(undefined)
@@ -110,11 +110,11 @@ export default function SpotifyStatsNav({ currentPage, compact = false, largeLin
             <span className="hidden sm:inline">Artists</span>
           </Link>
           <Link
-            href="/genres"
-            className={getLinkClasses('genres', false)}
+            href="/fresh-releases"
+            className={getLinkClasses('releases', false)}
           >
-            <Network className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Genres</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Releases</span>
           </Link>
           <Link
             href="/settings"
@@ -187,11 +187,11 @@ export default function SpotifyStatsNav({ currentPage, compact = false, largeLin
               Artists
             </Link>
             <Link
-              href="/genres"
-              className={getLinkClasses('genres', false)}
+              href="/fresh-releases"
+              className={getLinkClasses('releases', false)}
             >
-              <Network className={iconSize} />
-              Genres
+              <Sparkles className={iconSize} />
+              Releases
             </Link>
             <Link
               href="/settings"

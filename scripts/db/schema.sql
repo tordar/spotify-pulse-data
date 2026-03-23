@@ -83,3 +83,16 @@ CREATE TABLE IF NOT EXISTS import_log (
   imported_at       TEXT NOT NULL DEFAULT (datetime('now')),
   event_count       INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS fresh_releases (
+  id           TEXT PRIMARY KEY,  -- MusicBrainz release-group MBID
+  artist_name  TEXT NOT NULL,
+  artist_mbid  TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  release_date TEXT,              -- ISO date: "2025-04-15"
+  primary_type TEXT,              -- Album, EP, Single, etc.
+  caa_release_mbid TEXT,              -- release MBID for Cover Art Archive lookup
+  fetched_at   TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_fresh_releases_date ON fresh_releases(release_date);
+CREATE INDEX IF NOT EXISTS idx_fresh_releases_artist ON fresh_releases(artist_mbid);

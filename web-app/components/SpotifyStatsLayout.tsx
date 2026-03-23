@@ -9,7 +9,7 @@ import { Button } from './ui/button'
 import { Sheet, SheetContent } from './ui/sheet'
 import { useSpotifyStats } from './SpotifyStatsContext'
 
-type SpotifyStatsPage = 'albums' | 'songs' | 'artists' | 'stats' | 'genres' | 'settings'
+type SpotifyStatsPage = 'albums' | 'songs' | 'artists' | 'stats' | 'releases' | 'settings'
 
 interface SpotifyStatsLayoutProps {
   children: ReactNode
@@ -30,7 +30,7 @@ export default function SpotifyStatsLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const headerRef = useRef<HTMLDivElement>(null)
   const { searchTerm, setSearchTerm } = useSpotifyStats()
-  const showSearchOnMobile = currentPage !== 'stats' && currentPage !== 'genres' && currentPage !== 'settings'
+  const showSearchOnMobile = currentPage !== 'stats' && currentPage !== 'releases' && currentPage !== 'settings'
 
   const getSearchPlaceholder = () => {
     switch (currentPage) {
