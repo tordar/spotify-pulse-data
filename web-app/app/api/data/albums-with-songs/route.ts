@@ -1,3 +1,5 @@
+export const revalidate = 300
+
 import { NextResponse } from 'next/server'
 import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
@@ -24,8 +26,8 @@ export async function GET() {
       JOIN tracks t ON t.album_id = al.id
       LEFT JOIN listening_events le ON le.track_id = t.id
       GROUP BY al.id
-      HAVING playCount > 0
-      ORDER BY playCount DESC
+      HAVING COUNT(le.id) > 0
+      ORDER BY COUNT(le.id) DESC
       LIMIT 500
     `)
 

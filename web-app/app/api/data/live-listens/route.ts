@@ -20,16 +20,20 @@ export async function GET() {
   }
 
   try {
-    // Get last sync timestamp from D1
-    const db = getDb()
-    const { rows } = await db.execute(
-      `SELECT source_identifier FROM import_log WHERE source = 'listenbrainz' ORDER BY imported_at DESC LIMIT 1`
-    )
-    // Default to 48h ago if no sync has ever run, to avoid fetching all history
+    // Get last sync timestamp from D1 (non-fatal if D1 is unavailable)
     const fallbackTs = Math.floor(Date.now() / 1000) - 48 * 3600
-    const sinceTs: number = rows[0]?.source_identifier
-      ? parseInt(rows[0].source_identifier as string, 10)
-      : fallbackTs
+    let sinceTs = fallbackTs
+    try {
+      const db = getDb()
+      const { rows } = await db.execute(
+        `SELECT source_identifier FROM import_log WHERE source = 'listenbrainz' ORDER BY imported_at DESC LIMIT 1`
+      )
+      if (rows[0]?.source_identifier) {
+        sinceTs = parseInt(rows[0].source_identifier as string, 10)
+      }
+    } catch {
+      // D1 unavailable — use 48h fallback
+    }
     const sinceIso = new Date(sinceTs * 1000).toISOString()
 
     // Fetch listens since that timestamp from LB
@@ -50,7 +54,7 @@ export async function GET() {
       const headers: Record<string, string> = { 'User-Agent': 'spotify-pulse/1.0' }
       if (token) headers['Authorization'] = `Token ${token}`
 
-      const res = await fetch(url, { headers, next: { revalidate: 300 } })
+      const res = await fetch(url, { headers })
       if (!res.ok) break
 
       const data: any = await res.json()

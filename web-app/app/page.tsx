@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -105,6 +105,14 @@ interface DailyListeningResponse {
   }>
 }
 
+interface LiveListen {
+  listened_at: number
+  artist_name: string
+  track_name: string
+  release_name: string | null
+  duration_ms: number | null
+}
+
 // Helper function to get computed CSS variable value
 const getCSSVariable = (variable: string): string => {
   if (typeof window === 'undefined') return ''
@@ -129,6 +137,8 @@ export default function StatsPage() {
   } | null>(null)
   const [expandedHeatmapArtist, setExpandedHeatmapArtist] = useState<string | null>(null)
   const [expandedHeatmapAlbum, setExpandedHeatmapAlbum] = useState<string | null>(null) // key: `${artist}|${album}`
+  const [liveListens, setLiveListens] = useState<LiveListen[]>([])
+  const [dayPlaysLoading, setDayPlaysLoading] = useState(false)
   const chartComponentRef = useRef<HighchartsReact.RefObject>(null)
   const hourlyChartComponentRef = useRef<HighchartsReact.RefObject>(null)
   useEffect(() => {
@@ -189,6 +199,39 @@ export default function StatsPage() {
     return () => { cancelled = true }
   }, [selectedHeatmapYear])
 
+  useEffect(() => {
+    fetch('/api/data/live-listens')
+      .then(r => r.json())
+      .then(data => setLiveListens(data.listens ?? []))
+      .catch(() => {})
+  }, [])
+
+  // Merge live listens into daily data for heatmap and avg daily calc
+  const augmentedDailyData = useMemo(() => {
+    const base = dailyListening?.data ?? []
+    if (!liveListens.length) return base
+
+    // Start from D1 aggregated data (date+value only, no plays)
+    const dayMap = new Map<number, { date: number; value: number }>(
+      base.map(d => [d.date, { date: d.date, value: d.value }])
+    )
+
+    // Add ms from live listens by day (these are since the last sync, not yet in D1)
+    for (const l of liveListens) {
+      const ts = l.listened_at * 1000
+      const d = new Date(ts)
+      const dayKey = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+      const ms = l.duration_ms ?? 0
+      const existing = dayMap.get(dayKey)
+      if (existing) {
+        existing.value += ms
+      } else {
+        dayMap.set(dayKey, { date: dayKey, value: ms })
+      }
+    }
+
+    return Array.from(dayMap.values()).sort((a, b) => a.date - b.date)
+  }, [dailyListening, liveListens])
 
   // Prepare chart options for yearly listening hours
   const getChartOptions = (): Highcharts.Options => {
@@ -204,11 +247,30 @@ export default function StatsPage() {
       }
     }
 
-    const categories = statsData.stats.yearlyListeningTime.map(item => item.year)
-    const data = statsData.stats.yearlyListeningTime.map(item => item.totalListeningHours)
-    
+    // Add live listen ms to current year
+    const currentYearStr = new Date().getFullYear().toString()
+    const liveListensMsByYear = new Map<string, number>()
+    for (const l of liveListens) {
+      const yr = new Date(l.listened_at * 1000).getUTCFullYear().toString()
+      liveListensMsByYear.set(yr, (liveListensMsByYear.get(yr) ?? 0) + (l.duration_ms ?? 0))
+    }
+
+    const yearlyData = statsData.stats.yearlyListeningTime.map(item => {
+      const liveMs = liveListensMsByYear.get(item.year) ?? 0
+      // Only add live ms for current year (older years are already fully synced)
+      const extraMs = item.year === currentYearStr ? liveMs : 0
+      return {
+        ...item,
+        totalListeningTimeMs: item.totalListeningTimeMs + extraMs,
+        totalListeningHours: item.totalListeningHours + extraMs / 3_600_000,
+      }
+    })
+
+    const categories = yearlyData.map(item => item.year)
+    const data = yearlyData.map(item => item.totalListeningHours)
+
     // Extract podcast data (in hours)
-    const podcastData = statsData.stats.yearlyListeningTime.map(item => 
+    const podcastData = yearlyData.map(item =>
       item.totalPodcastListeningHours || 0
     )
 
@@ -218,7 +280,7 @@ export default function StatsPage() {
     let estimatedData: (number | null)[] = new Array(categories.length).fill(null)
     
     if (currentYearIndex !== -1) {
-      const currentYearData = statsData.stats.yearlyListeningTime[currentYearIndex]
+      const currentYearData = yearlyData[currentYearIndex]
       const hoursSoFar = currentYearData.totalListeningHours
       const podcastHoursSoFar = currentYearData.totalPodcastListeningHours || 0
       const totalHoursSoFar = hoursSoFar + podcastHoursSoFar
@@ -727,10 +789,10 @@ export default function StatsPage() {
               {/* Summary: Today's listening (left) + All-time stats (right) */}
               <div className="grid gap-6 md:grid-cols-2">
                 <TodaysListeningCard
-                  dailyData={dailyListening?.data}
                   loading={dailyListeningLoading}
                   selectedHeatmapYear={selectedHeatmapYear}
                   formatDuration={formatDuration}
+                  liveListens={liveListens}
                 />
                 <AllTimeStatsCard
                   totalListeningHours={statsData?.stats?.totalListeningHours}
@@ -798,8 +860,8 @@ export default function StatsPage() {
                         </option>
                       ))}
                     </select>
-                    {!dailyListeningLoading && dailyListening?.data != null && dailyListening.data.length > 0 && (() => {
-                      const totalMs = dailyListening.data
+                    {!dailyListeningLoading && augmentedDailyData.length > 0 && (() => {
+                      const totalMs = augmentedDailyData
                         .filter((d) => new Date(d.date).getUTCFullYear() === selectedHeatmapYear)
                         .reduce((sum, d) => sum + d.value, 0)
                       const now = new Date()
@@ -823,21 +885,33 @@ export default function StatsPage() {
                     <p className="text-muted-foreground text-sm">No daily listening data available.</p>
                   ) : (
                     <>
-                      {dailyListening.data.length === 0 && (
+                      {augmentedDailyData.length === 0 && (
                         <p className="text-muted-foreground text-sm mb-3">No listening data for {selectedHeatmapYear}.</p>
                       )}
                       <div className="overflow-x-auto -mx-1 md:overflow-visible md:mx-0 min-h-0 md:min-h-[200px] w-full block">
                         <ListeningHeatmap
                           year={selectedHeatmapYear}
-                          data={dailyListening.data}
+                          data={augmentedDailyData}
                           formatDuration={formatDuration}
                           onDayClick={(day) => {
-                            setSelectedDay({ date: day.date, value: day.value, plays: day.plays ?? [] })
+                            setSelectedDay({ date: day.date, value: day.value, plays: [] })
+                            setDayPlaysLoading(true)
+                            const dateStr = new Date(day.date).toISOString().slice(0, 10)
+                            fetch(`/api/data/day-plays?date=${dateStr}`)
+                              .then(r => r.json())
+                              .then(data => setSelectedDay(prev =>
+                                prev?.date === day.date ? { ...prev, plays: data.plays ?? [] } : prev
+                              ))
+                              .catch(() => {})
+                              .finally(() => setDayPlaysLoading(false))
                           }}
                           className="min-w-[600px] md:min-w-0 md:w-full md:max-w-full"
                         />
                       </div>
-                      {selectedDay && (() => {
+                      {selectedDay && dayPlaysLoading && (
+                        <p className="text-muted-foreground text-sm mt-3">Loading plays…</p>
+                      )}
+                      {selectedDay && !dayPlaysLoading && (() => {
                         const totalPlays = selectedDay.plays.length
                         const byArtist = new Map<string, { playCount: number; albums: Map<string, Set<string>> }>()
                         for (const play of selectedDay.plays) {

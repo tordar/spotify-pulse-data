@@ -44,6 +44,7 @@ interface YearlyPlayTime {
 }
 
 interface SongData {
+  trackId: number
   duration_ms: number
   count: number
   songId: string
@@ -147,6 +148,7 @@ export default function TopSongsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('plays')
   const [showNewOnly, setShowNewOnly] = useState(false)
   const [selectedSong, setSelectedSong] = useState<SongData | null>(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [yearlyPlayTimeExpanded, setYearlyPlayTimeExpanded] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
@@ -250,6 +252,18 @@ export default function TopSongsPage() {
   
   const handleSongClick = (song: SongData) => {
     setSelectedSong(song)
+    setDetailsLoading(true)
+    fetch(`/api/data/song-details?trackId=${song.trackId}`)
+      .then(r => r.json())
+      .then(data => {
+        setSelectedSong(prev =>
+          prev?.trackId === song.trackId
+            ? { ...prev, yearly_play_time: data.yearly_play_time }
+            : prev
+        )
+      })
+      .catch(() => {})
+      .finally(() => setDetailsLoading(false))
   }
   
   // Process artist data for pie chart
@@ -938,6 +952,9 @@ export default function TopSongsPage() {
               
               {/* Scrollable Content Area */}
               <div className="flex-1 overflow-y-auto min-h-0">
+                {detailsLoading && (
+                  <div className="text-sm text-muted-foreground mb-4">Loading details...</div>
+                )}
                 {/* Yearly Play Time Section */}
                 {selectedSong.yearly_play_time && selectedSong.yearly_play_time.length > 0 && (
                   <div className="border-t pt-4">

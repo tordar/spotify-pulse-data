@@ -116,12 +116,10 @@ export function createD1Client(config: {
       statements: D1Statement[],
       _mode?: string,
     ): Promise<D1ResultSet[]> {
-      const results: D1ResultSet[] = []
-      for (const s of statements) {
-        const entry = await querySingle(s.sql, s.args ?? [])
-        results.push(toResultSet(entry))
-      }
-      return results
+      if (statements.length === 0) return []
+      return Promise.all(
+        statements.map(s => querySingle(s.sql, s.args ?? []).then(toResultSet))
+      )
     },
   }
 }

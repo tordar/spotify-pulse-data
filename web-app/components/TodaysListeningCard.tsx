@@ -10,12 +10,6 @@ interface DayPlay {
   msPlayed: number
 }
 
-interface DailyDay {
-  date: number
-  value: number
-  plays?: DayPlay[]
-}
-
 interface LiveListen {
   listened_at: number
   artist_name: string
@@ -25,33 +19,37 @@ interface LiveListen {
 }
 
 interface TodaysListeningCardProps {
-  dailyData: DailyDay[] | null | undefined
   loading: boolean
   selectedHeatmapYear: number
   formatDuration: (ms: number) => string
+  liveListens?: LiveListen[]
 }
 
 export default function TodaysListeningCard({
-  dailyData,
   loading,
   selectedHeatmapYear,
   formatDuration,
+  liveListens = [],
 }: TodaysListeningCardProps) {
   const currentYear = new Date().getFullYear()
-  const [liveListens, setLiveListens] = useState<LiveListen[]>([])
-  const [liveLoading, setLiveLoading] = useState(true)
+  const [d1Plays, setD1Plays] = useState<DayPlay[]>([])
+  const [d1Ms, setD1Ms] = useState(0)
 
   useEffect(() => {
-    fetch('/api/data/live-listens')
+    if (selectedHeatmapYear !== currentYear) return
+    const today = new Date()
+    const dateStr = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')}`
+    fetch(`/api/data/day-plays?date=${dateStr}`)
       .then(r => r.json())
       .then(data => {
-        setLiveListens(data.listens ?? [])
+        const plays: DayPlay[] = data.plays ?? []
+        setD1Plays(plays)
+        setD1Ms(plays.reduce((s, p) => s + p.msPlayed, 0))
       })
       .catch(() => {})
-      .finally(() => setLiveLoading(false))
-  }, [])
+  }, [selectedHeatmapYear, currentYear])
 
-  if (loading || liveLoading) {
+  if (loading) {
     return (
       <Card>
         <CardHeader><CardTitle>Today&apos;s listening</CardTitle></CardHeader>
@@ -77,10 +75,6 @@ export default function TodaysListeningCard({
   const today = new Date()
   const todayStartUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
   const todayEndUtc = todayStartUtc + 86400000
-
-  const todayEntry = dailyData?.find(d => d.date === todayStartUtc)
-  const d1Plays: DayPlay[] = todayEntry?.plays ?? []
-  const d1Ms = todayEntry?.value ?? 0
 
   // Filter live listens to today only
   const liveTodayPlays: DayPlay[] = liveListens

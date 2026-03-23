@@ -1,3 +1,5 @@
+export const revalidate = 300
+
 import { NextResponse } from 'next/server'
 import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
@@ -7,6 +9,7 @@ export async function GET() {
 
     const { rows } = await db.execute(`
       SELECT
+        t.id as trackId,
         t.spotify_id as songId,
         t.name as trackName,
         t.duration_ms,
@@ -21,13 +24,13 @@ export async function GET() {
       JOIN albums al ON al.id = t.album_id
       LEFT JOIN listening_events le ON le.track_id = t.id
       GROUP BY t.id
-      HAVING playCount > 0
-      ORDER BY playCount DESC
+      HAVING COUNT(le.id) > 0
+      ORDER BY COUNT(le.id) DESC
       LIMIT 500
     `)
 
     const songs = rows as unknown as Array<{
-      songId: string | null; trackName: string; duration_ms: number;
+      trackId: number; songId: string | null; trackName: string; duration_ms: number;
       artistName: string; artistGenres: string | null;
       albumName: string; albumImageUrl: string | null;
       playCount: number; totalDurationMs: number;
@@ -35,6 +38,7 @@ export async function GET() {
 
     const result = songs.map((s, i) => ({
       rank: i + 1,
+      trackId: s.trackId,
       duration_ms: s.totalDurationMs,
       count: s.playCount,
       songId: s.songId || '',

@@ -1,3 +1,5 @@
+export const revalidate = 300
+
 import { NextResponse } from 'next/server'
 import { getDb, buildArtistImageArray } from '@/lib/db'
 
@@ -19,8 +21,8 @@ export async function GET() {
       JOIN tracks t ON t.artist_id = a.id
       LEFT JOIN listening_events le ON le.track_id = t.id
       GROUP BY a.id
-      HAVING playCount > 0
-      ORDER BY playCount DESC
+      HAVING COUNT(le.id) > 0
+      ORDER BY COUNT(le.id) DESC
       LIMIT 500
     `)
 
@@ -32,6 +34,7 @@ export async function GET() {
 
     const result = artists.map((a, i) => ({
       rank: i + 1,
+      artistId: a.artistId,
       duration_ms: a.totalDurationMs,
       count: a.playCount,
       differents: a.uniqueSongs,

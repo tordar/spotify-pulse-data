@@ -58,6 +58,7 @@ interface YearlyPlayTime {
 }
 
 interface AlbumData {
+  albumId: number
   duration_ms: number
   count: number
   differents: number
@@ -202,6 +203,7 @@ export default function TopAlbumsPage() {
   const { searchTerm, setSearchTerm, viewMode, setViewMode } = useSpotifyStats()
   const [loading, setLoading] = useState(true)
   const [selectedAlbum, setSelectedAlbum] = useState<AlbumData | null>(null)
+  const [songsLoading, setSongsLoading] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('plays')
   const [showNewOnly, setShowNewOnly] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -237,8 +239,8 @@ export default function TopAlbumsPage() {
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
-        const response = await fetch('/api/data/albums-with-songs', {
-          cache: 'no-cache' // Validate with server but allow short-term caching
+        const response = await fetch('/api/data/albums', {
+          cache: 'no-cache'
         })
         if (!response.ok) {
           throw new Error(`Failed to fetch: ${response.statusText}`)
@@ -366,6 +368,18 @@ export default function TopAlbumsPage() {
   
   const handleAlbumClick = (album: AlbumData) => {
     setSelectedAlbum(album)
+    setSongsLoading(true)
+    fetch(`/api/data/album-songs?albumId=${album.albumId}`)
+      .then(r => r.json())
+      .then(data => {
+        setSelectedAlbum(prev =>
+          prev?.albumId === album.albumId
+            ? { ...prev, songs: data.songs, played_songs: data.played_songs, unplayed_songs: data.unplayed_songs, yearly_play_time: data.yearly_play_time }
+            : prev
+        )
+      })
+      .catch(() => {})
+      .finally(() => setSongsLoading(false))
   }
   
   // Process artist data for pie chart
@@ -1136,7 +1150,10 @@ export default function TopAlbumsPage() {
                 )}
                 
                 {/* Songs Section */}
-                {selectedAlbum.songs && selectedAlbum.songs.length > 0 && (
+                {songsLoading && (
+                  <div className="border-t pt-4 text-sm text-muted-foreground">Loading songs...</div>
+                )}
+                {!songsLoading && selectedAlbum.songs && selectedAlbum.songs.length > 0 && (
                   <div className="border-t pt-4">
                     <button
                       onClick={() => setSongsExpanded(!songsExpanded)}

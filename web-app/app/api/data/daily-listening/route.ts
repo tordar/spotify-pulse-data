@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 
+export const revalidate = 300
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -28,56 +30,27 @@ export async function GET(request: Request) {
     const startDate = `${minYear}-01-01`
     const endDate = `${maxYear}-12-31`
 
+    // Aggregate in SQL — returns ~365 rows per year instead of all individual events
     const { rows } = await db.execute({
       sql: `
         SELECT
-          le.played_at,
-          le.ms_played,
-          t.name as songName,
-          a.name as artistName,
-          al.name as albumName
-        FROM listening_events le
-        JOIN tracks t ON t.id = le.track_id
-        JOIN artists a ON a.id = t.artist_id
-        JOIN albums al ON al.id = t.album_id
-        WHERE date(le.played_at) >= ? AND date(le.played_at) <= ?
-        ORDER BY le.played_at
+          date(played_at) as day,
+          SUM(ms_played) as totalMs
+        FROM listening_events
+        WHERE date(played_at) >= ? AND date(played_at) <= ?
+        GROUP BY day
+        ORDER BY day
       `,
       args: [startDate, endDate],
     })
 
-    const listeningRows = rows as unknown as Array<{
-      played_at: string; ms_played: number;
-      songName: string; artistName: string; albumName: string;
-    }>
-
-    const dayMap = new Map<number, { totalMs: number; plays: Array<{
-      songName: string; artists: string[]; albumName: string; msPlayed: number;
-    }> }>()
-
-    for (const row of listeningRows) {
-      const d = new Date(row.played_at)
-      d.setUTCHours(0, 0, 0, 0)
-      const key = d.getTime()
-
-      let rec = dayMap.get(key)
-      if (!rec) {
-        rec = { totalMs: 0, plays: [] }
-        dayMap.set(key, rec)
-      }
-      rec.totalMs += row.ms_played
-      rec.plays.push({
-        songName: row.songName || 'Unknown',
-        artists: [row.artistName || 'Unknown'],
-        albumName: row.albumName || 'Unknown Album',
-        msPlayed: row.ms_played,
-      })
-    }
-
-    const dataArray = Array.from(dayMap.entries()).map(([date, rec]) => ({
-      date,
-      value: rec.totalMs,
-      plays: rec.plays,
+    const dataArray = (rows as unknown as Array<{ day: string; totalMs: number }>).map(r => ({
+      date: Date.UTC(
+        parseInt(r.day.slice(0, 4)),
+        parseInt(r.day.slice(5, 7)) - 1,
+        parseInt(r.day.slice(8, 10)),
+      ),
+      value: r.totalMs,
     }))
 
     return NextResponse.json({ years, data: dataArray })

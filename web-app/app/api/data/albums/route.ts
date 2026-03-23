@@ -1,3 +1,5 @@
+export const revalidate = 300
+
 import { NextResponse } from 'next/server'
 import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
@@ -14,15 +16,17 @@ export async function GET() {
         al.image_url,
         al.release_date,
         al.album_type,
+        al.total_tracks,
         COUNT(le.id) as playCount,
         SUM(le.ms_played) as totalDurationMs,
-        COUNT(DISTINCT t.id) as uniqueSongs
+        COUNT(DISTINCT t.id) as uniqueSongs,
+        MIN(le.played_at) as earliestPlayedAt
       FROM albums al
       JOIN tracks t ON t.album_id = al.id
       LEFT JOIN listening_events le ON le.track_id = t.id
       GROUP BY al.id
-      HAVING playCount > 0
-      ORDER BY playCount DESC
+      HAVING COUNT(le.id) > 0
+      ORDER BY COUNT(le.id) DESC
       LIMIT 500
     `)
 
@@ -30,17 +34,22 @@ export async function GET() {
       albumId: number; albumName: string; artistName: string;
       spotifyId: string | null; image_url: string | null;
       release_date: string | null; album_type: string | null;
+      total_tracks: number | null;
       playCount: number; totalDurationMs: number; uniqueSongs: number;
+      earliestPlayedAt: string | null;
     }>
 
     const result = albums.map((al, i) => ({
       rank: i + 1,
+      albumId: al.albumId,
       duration_ms: al.totalDurationMs,
       count: al.playCount,
       differents: al.uniqueSongs,
       primaryAlbumId: al.spotifyId || String(al.albumId),
       total_count: al.playCount,
       total_duration_ms: al.totalDurationMs,
+      total_songs: al.total_tracks || al.uniqueSongs,
+      earliest_played_at: al.earliestPlayedAt || undefined,
       album: {
         name: al.albumName,
         album_type: al.album_type || '',

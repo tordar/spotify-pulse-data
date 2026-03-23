@@ -69,6 +69,7 @@ interface ArtistTopAlbum {
 }
 
 interface ArtistData {
+  artistId: number
   duration_ms: number
   count: number
   differents: number
@@ -176,6 +177,7 @@ export default function TopArtistsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('plays')
   const [showNewOnly, setShowNewOnly] = useState(false)
   const [selectedArtist, setSelectedArtist] = useState<ArtistData | null>(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [yearlyPlayTimeExpanded, setYearlyPlayTimeExpanded] = useState(true)
   const [topSongsExpanded, setTopSongsExpanded] = useState(true)
@@ -275,6 +277,18 @@ export default function TopArtistsPage() {
   
   const handleArtistClick = (artist: ArtistData) => {
     setSelectedArtist(artist)
+    setDetailsLoading(true)
+    fetch(`/api/data/artist-details?artistId=${artist.artistId}`)
+      .then(r => r.json())
+      .then(data => {
+        setSelectedArtist(prev =>
+          prev?.artistId === artist.artistId
+            ? { ...prev, yearly_play_time: data.yearly_play_time, top_songs: data.top_songs, top_albums: data.top_albums }
+            : prev
+        )
+      })
+      .catch(() => {})
+      .finally(() => setDetailsLoading(false))
   }
   
   // Prepare chart options for yearly play time
@@ -705,6 +719,9 @@ export default function TopArtistsPage() {
               
               {/* Scrollable Content Area */}
               <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+                {detailsLoading && (
+                  <div className="text-sm text-muted-foreground">Loading details...</div>
+                )}
                 {/* Yearly Play Time Section */}
                 {selectedArtist.yearly_play_time && selectedArtist.yearly_play_time.length > 0 && (
                   <div className="border-t pt-4">

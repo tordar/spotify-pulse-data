@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDb, buildSpotifyImageArray } from '@/lib/db'
 
+export const revalidate = 300
+
 const MS_PER_HOUR = 60 * 60 * 1000
 const MS_PER_DAY = 24 * MS_PER_HOUR
 
@@ -8,56 +10,15 @@ export async function GET() {
   try {
     const db = getDb()
 
-    // Run independent top-level queries in parallel
-    const [yearlyResult, totalsResult, hourlyResult, countryResult] = await Promise.all([
-      db.execute(`
-        SELECT
-          strftime('%Y', played_at) as year,
-          SUM(ms_played) as totalListeningTimeMs,
-          COUNT(*) as playCount
-        FROM listening_events
-        GROUP BY year ORDER BY year
-      `),
-      db.execute(`
-        SELECT SUM(ms_played) as totalMs, COUNT(*) as totalEvents
-        FROM listening_events
-      `),
-      db.execute(`
-        SELECT
-          CAST(strftime('%H', played_at) AS INTEGER) as hour,
-          SUM(ms_played) as totalListeningTimeMs,
-          COUNT(*) as playCount
-        FROM listening_events
-        GROUP BY hour ORDER BY hour
-      `),
-      db.execute(`
-        SELECT
-          conn_country as countryCode,
-          SUM(ms_played) as totalMsPlayed,
-          COUNT(*) as playCount,
-          MIN(played_at) as firstPlayedAt,
-          MAX(played_at) as lastPlayedAt
-        FROM listening_events
-        WHERE conn_country IS NOT NULL AND conn_country != ''
-        GROUP BY conn_country ORDER BY totalMsPlayed DESC
-      `),
-    ])
+    // Step 1: fetch years (needed to build per-year batch statements)
+    const { rows: yearRows } = await db.execute(`
+      SELECT strftime('%Y', played_at) as year
+      FROM listening_events
+      GROUP BY year ORDER BY year
+    `)
+    const years = (yearRows as unknown as Array<{ year: string }>).map(r => r.year)
 
-    const yearlyRows = yearlyResult.rows as unknown as Array<{
-      year: string; totalListeningTimeMs: number; playCount: number;
-    }>
-    const totals = totalsResult.rows[0] as unknown as { totalMs: number; totalEvents: number }
-    const hourlyRows = hourlyResult.rows as unknown as Array<{
-      hour: number; totalListeningTimeMs: number; playCount: number;
-    }>
-    const countryRows = countryResult.rows as unknown as Array<{
-      countryCode: string; totalMsPlayed: number; playCount: number;
-      firstPlayedAt: string; lastPlayedAt: string;
-    }>
-
-    const years = yearlyRows.map(r => r.year)
-
-    // Batch all per-year top-5 queries in one round trip (3 queries × N years)
+    // Step 2: send all remaining queries in a single HTTP round trip
     const topSongsSql = `
       SELECT t.spotify_id as songId, t.name, a.name as artist, al.image_url,
              COUNT(*) as playCount, SUM(le.ms_played) as totalListeningTimeMs
@@ -90,27 +51,56 @@ export async function GET() {
       GROUP BY al.id ORDER BY playCount DESC LIMIT 5
     `
 
-    const batchStatements = years.flatMap(year => [
-      { sql: topSongsSql, args: [year] as [string] },
-      { sql: topArtistsSql, args: [year] as [string] },
-      { sql: topAlbumsSql, args: [year] as [string] },
-    ])
+    const batchStatements = [
+      {
+        sql: `
+          SELECT strftime('%Y', played_at) as year,
+                 SUM(ms_played) as totalListeningTimeMs, COUNT(*) as playCount
+          FROM listening_events GROUP BY year ORDER BY year
+        `,
+        args: [] as unknown[],
+      },
+      {
+        sql: `SELECT SUM(ms_played) as totalMs, COUNT(*) as totalEvents FROM listening_events`,
+        args: [] as unknown[],
+      },
+      {
+        sql: `
+          SELECT CAST(strftime('%H', played_at) AS INTEGER) as hour,
+                 SUM(ms_played) as totalListeningTimeMs, COUNT(*) as playCount
+          FROM listening_events GROUP BY hour ORDER BY hour
+        `,
+        args: [] as unknown[],
+      },
+      {
+        sql: `
+          SELECT conn_country as countryCode, SUM(ms_played) as totalMsPlayed,
+                 COUNT(*) as playCount, MIN(played_at) as firstPlayedAt, MAX(played_at) as lastPlayedAt
+          FROM listening_events
+          WHERE conn_country IS NOT NULL AND conn_country != ''
+          GROUP BY conn_country ORDER BY totalMsPlayed DESC
+        `,
+        args: [] as unknown[],
+      },
+      ...years.flatMap(year => [
+        { sql: topSongsSql, args: [year] as unknown[] },
+        { sql: topArtistsSql, args: [year] as unknown[] },
+        { sql: topAlbumsSql, args: [year] as unknown[] },
+      ]),
+    ]
 
-    const batchResults = await db.batch(batchStatements, 'read')
+    const results = await db.batch(batchStatements)
+
+    const yearlyRows = results[0].rows as unknown as Array<{ year: string; totalListeningTimeMs: number; playCount: number }>
+    const totals = results[1].rows[0] as unknown as { totalMs: number; totalEvents: number }
+    const hourlyRows = results[2].rows as unknown as Array<{ hour: number; totalListeningTimeMs: number; playCount: number }>
+    const countryRows = results[3].rows as unknown as Array<{ countryCode: string; totalMsPlayed: number; playCount: number; firstPlayedAt: string; lastPlayedAt: string }>
 
     const yearlyTopItems = years.map((year, i) => {
-      const topSongs = batchResults[i * 3].rows as unknown as Array<{
-        songId: string | null; name: string; artist: string; image_url: string | null;
-        playCount: number; totalListeningTimeMs: number;
-      }>
-      const topArtists = batchResults[i * 3 + 1].rows as unknown as Array<{
-        artistName: string; image_url: string | null;
-        playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
-      }>
-      const topAlbums = batchResults[i * 3 + 2].rows as unknown as Array<{
-        albumName: string; artist: string; image_url: string | null;
-        playCount: number; totalListeningTimeMs: number; uniqueSongs: number;
-      }>
+      const base = 4 + i * 3
+      const topSongs = results[base].rows as unknown as Array<{ songId: string | null; name: string; artist: string; image_url: string | null; playCount: number; totalListeningTimeMs: number }>
+      const topArtists = results[base + 1].rows as unknown as Array<{ artistName: string; image_url: string | null; playCount: number; totalListeningTimeMs: number; uniqueSongs: number }>
+      const topAlbums = results[base + 2].rows as unknown as Array<{ albumName: string; artist: string; image_url: string | null; playCount: number; totalListeningTimeMs: number; uniqueSongs: number }>
 
       return {
         year: parseInt(year),
