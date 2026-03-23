@@ -25,10 +25,12 @@ export async function GET() {
     const { rows } = await db.execute(
       `SELECT source_identifier FROM import_log WHERE source = 'listenbrainz' ORDER BY imported_at DESC LIMIT 1`
     )
+    // Default to 48h ago if no sync has ever run, to avoid fetching all history
+    const fallbackTs = Math.floor(Date.now() / 1000) - 48 * 3600
     const sinceTs: number = rows[0]?.source_identifier
       ? parseInt(rows[0].source_identifier as string, 10)
-      : 0
-    const sinceIso = sinceTs > 0 ? new Date(sinceTs * 1000).toISOString() : null
+      : fallbackTs
+    const sinceIso = new Date(sinceTs * 1000).toISOString()
 
     // Fetch listens since that timestamp from LB
     const listens: Array<{
