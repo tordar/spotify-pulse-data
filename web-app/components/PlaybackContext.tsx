@@ -2,35 +2,19 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
-export interface PlaybackTrack {
-  id: string
-  name: string
-  duration_ms: number
-  type: 'track'
-  uri: string
-  is_local: boolean
-  artists: Array<{ id: string; name: string; type: string }>
-  album: {
-    id: string
-    name: string
-    images: Array<{ url: string; height: number | null; width: number | null }>
-  }
-  external_urls?: { spotify: string }
-}
+export type PlaybackSource = 'spotify' | 'navidrome' | 'other'
 
-export interface PlaybackState {
-  device: { name: string; type: string; is_active: boolean }
-  repeat_state: string
-  shuffle_state: boolean
-  timestamp: number
-  progress_ms: number | null
-  is_playing: boolean
-  item: PlaybackTrack | null
-  currently_playing_type: string
+export interface PlaybackNowPlaying {
+  track_name: string
+  artist_name: string
+  release_name: string | null
+  duration_ms: number | null
+  cover_art_url: string | null
+  source: PlaybackSource
 }
 
 type PlaybackContextValue = {
-  state: PlaybackState | null
+  playing: PlaybackNowPlaying | null
   error: string | null
   loading: boolean
   refetch: () => void
@@ -38,27 +22,27 @@ type PlaybackContextValue = {
 
 const PlaybackContext = createContext<PlaybackContextValue | undefined>(undefined)
 
-const POLL_INTERVAL_MS = 3000
+const POLL_INTERVAL_MS = 10000
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PlaybackState | null>(null)
+  const [playing, setPlaying] = useState<PlaybackNowPlaying | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchPlayback = useCallback(async () => {
     try {
-      const res = await fetch('/api/spotify/playback-state', { cache: 'no-store' })
+      const res = await fetch('/api/lb/playing-now', { cache: 'no-store' })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error ?? 'Failed to load playback')
-        setState(null)
+        setPlaying(null)
         return
       }
-      setError(data.error ?? null)
-      setState(data.state ?? null)
+      setError(null)
+      setPlaying(data.playing ?? null)
     } catch {
       setError('Failed to load playback')
-      setState(null)
+      setPlaying(null)
     } finally {
       setLoading(false)
     }
@@ -71,7 +55,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, [fetchPlayback])
 
   return (
-    <PlaybackContext.Provider value={{ state, error, loading, refetch: fetchPlayback }}>
+    <PlaybackContext.Provider value={{ playing, error, loading, refetch: fetchPlayback }}>
       {children}
     </PlaybackContext.Provider>
   )

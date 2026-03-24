@@ -15,6 +15,7 @@ import * as path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') });
+dotenv.config({ path: path.join(__dirname, '..', '..', 'web-app', '.env.local'), override: true });
 
 import { getD1Client } from './d1-client';
 import {

@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS listening_events (
   track_id      INTEGER NOT NULL REFERENCES tracks(id),
   played_at     TEXT NOT NULL,
   ms_played     INTEGER NOT NULL DEFAULT 0,
-  source        TEXT NOT NULL CHECK(source IN ('spotify','listenbrainz','local_import')),
+  source        TEXT NOT NULL CHECK(source IN ('spotify','navidrome','ipod','local_import')),
   conn_country  TEXT,
   platform      TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))

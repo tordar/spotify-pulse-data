@@ -22,6 +22,10 @@ interface YearlyListeningTime {
   playCount: number
   totalPodcastListeningTimeMs?: number
   totalPodcastListeningHours?: number
+  spotifyMs?: number
+  navidromeMs?: number
+  spotifyHours?: number
+  navidromeHours?: number
 }
 
 interface HourlyListeningDistribution {
@@ -267,7 +271,8 @@ export default function StatsPage() {
     })
 
     const categories = yearlyData.map(item => item.year)
-    const data = yearlyData.map(item => item.totalListeningHours)
+    const spotifyData = yearlyData.map(item => item.spotifyHours ?? item.totalListeningHours)
+    const navidromeData = yearlyData.map(item => item.navidromeHours ?? 0)
 
     // Extract podcast data (in hours)
     const podcastData = yearlyData.map(item =>
@@ -278,27 +283,27 @@ export default function StatsPage() {
     const currentYear = new Date().getFullYear().toString()
     const currentYearIndex = categories.indexOf(currentYear)
     let estimatedData: (number | null)[] = new Array(categories.length).fill(null)
-    
+
     if (currentYearIndex !== -1) {
       const currentYearData = yearlyData[currentYearIndex]
       const hoursSoFar = currentYearData.totalListeningHours
       const podcastHoursSoFar = currentYearData.totalPodcastListeningHours || 0
       const totalHoursSoFar = hoursSoFar + podcastHoursSoFar
-      
+
       // Calculate day of year (1-365/366)
       const now = new Date()
       const startOfYear = new Date(now.getFullYear(), 0, 1)
       const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      
+
       // Calculate days remaining in year
       const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
       const daysInYear = isLeapYear(now.getFullYear()) ? 366 : 365
       const daysRemaining = daysInYear - dayOfYear
-      
+
       // Calculate estimated additional hours: (total hours so far / day of year) * days remaining
       const estimatedAdditionalHours = (totalHoursSoFar / dayOfYear) * daysRemaining
       const estimatedTotalHours = totalHoursSoFar + estimatedAdditionalHours
-      
+
       // Set estimated data to show the estimated TOTAL (will be stacked on top of actual)
       // Since we're stacking, we need to subtract actual from total to get the height of the estimated bar
       estimatedData[currentYearIndex] = estimatedTotalHours - totalHoursSoFar
@@ -309,14 +314,14 @@ export default function StatsPage() {
     const mutedForeground = getCSSVariable('--muted-foreground')
     const card = getCSSVariable('--card')
     const border = getCSSVariable('--border')
-    const primary = getCSSVariable('--primary')
-    
+
     const foregroundColor = foreground ? `rgb(${foreground})` : '#1f2937'
     const mutedColor = mutedForeground ? `rgb(${mutedForeground})` : '#6b7280'
     const cardColor = card ? `rgb(${card})` : '#ffffff'
     const borderColor = border ? `rgb(${border})` : '#e5e7eb'
-    const primaryColor = primary ? `rgb(${primary})` : '#4f46e5'
     const podcastColor = '#a855f7' // purple-500
+    const spotifyColor = '#22c55e' // green-500
+    const navidromeColor = '#f97316' // orange-500
 
     return {
       chart: {
@@ -380,24 +385,25 @@ export default function StatsPage() {
         formatter: function(this: Highcharts.Point) {
           const pointIndex = typeof this.x === 'number' ? this.x : (this.index ?? 0)
           const year = categories[pointIndex] || String(this.x)
-          
+
           if (this.series.name === 'Estimated (Projected)') {
-            // Calculate estimated total: actual hours + podcast hours + estimated additional hours
-            const actualHours = data[pointIndex] || 0
-            const podcastHours = podcastData[pointIndex] || 0
+            const sp = spotifyData[pointIndex] || 0
+            const nd = navidromeData[pointIndex] || 0
             const estimatedAdditional = this.y as number
-            const estimatedTotal = actualHours + podcastHours + estimatedAdditional
+            const estimatedTotal = sp + nd + estimatedAdditional
             return `<b>${year} (Estimated Total)</b><br/>${formatDuration(estimatedTotal * 60 * 60 * 1000)}<br/><span style="color: ${mutedColor}">Projected if current pace continues</span>`
-          } else if (this.series.name === 'Podcast Hours') {
-            const podcastHours = this.y as number
-            const musicHours = data[pointIndex] || 0
-            const totalHours = musicHours + podcastHours
-            return `<b>${year}</b><br/>Podcast: ${formatDuration(podcastHours * 60 * 60 * 1000)}<br/>Music: ${formatDuration(musicHours * 60 * 60 * 1000)}<br/>Total: ${formatDuration(totalHours * 60 * 60 * 1000)}`
+          } else if (this.series.name === 'Spotify') {
+            const sp = this.y as number
+            const nd = navidromeData[pointIndex] || 0
+            const total = sp + nd
+            return `<b>${year}</b><br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}${nd > 0 ? `<br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}` : ''}`
+          } else if (this.series.name === 'Navidrome') {
+            const nd = this.y as number
+            const sp = spotifyData[pointIndex] || 0
+            const total = sp + nd
+            return `<b>${year}</b><br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}`
           } else {
-            const musicHours = this.y as number
-            const podcastHours = podcastData[pointIndex] || 0
-            const totalHours = musicHours + podcastHours
-            return `<b>${year}</b><br/>Music: ${formatDuration(musicHours * 60 * 60 * 1000)}${podcastHours > 0 ? `<br/>Podcast: ${formatDuration(podcastHours * 60 * 60 * 1000)}<br/>Total: ${formatDuration(totalHours * 60 * 60 * 1000)}` : ''}`
+            return `<b>${year}</b><br/>${formatDuration((this.y as number) * 60 * 60 * 1000)}`
           }
         }
       },
@@ -414,10 +420,16 @@ export default function StatsPage() {
       },
       series: [
         {
-          name: 'Listening Hours',
-          data: data,
+          name: 'Spotify',
+          data: spotifyData,
           type: 'column',
-          color: primaryColor
+          color: spotifyColor
+        },
+        {
+          name: 'Navidrome',
+          data: navidromeData,
+          type: 'column',
+          color: navidromeColor
         },
         {
           name: 'Podcast Hours',

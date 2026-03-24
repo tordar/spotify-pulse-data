@@ -16,6 +16,15 @@ import 'dotenv/config';
 const LB_BASE = 'https://api.listenbrainz.org/1';
 const PAGE_SIZE = 100;
 
+type ListenSource = 'spotify' | 'navidrome'
+
+function detectSource(listen: LBListen): ListenSource {
+  const info = listen.track_metadata.additional_info ?? {}
+  const raw = [info.music_service, info.music_service_name, info.submission_client]
+    .filter(Boolean).join(' ').toLowerCase()
+  return raw.includes('navidrome') ? 'navidrome' : 'spotify'
+}
+
 interface LBListen {
   listened_at: number;
   track_metadata: {
@@ -28,6 +37,9 @@ interface LBListen {
       release_mbid?: string;
       artist_mbids?: string[];
       tracknumber?: number;
+      submission_client?: string;
+      music_service?: string;
+      music_service_name?: string;
     };
   };
 }
@@ -180,10 +192,11 @@ async function syncListensToD1(d1: D1Client, listens: LBListen[]): Promise<void>
 
     if (!trackId) continue;
 
+    const source = detectSource(listen);
     await d1.execute({
       sql: `INSERT OR IGNORE INTO listening_events (track_id, played_at, ms_played, source)
-            VALUES (?, ?, ?, 'listenbrainz')`,
-      args: [trackId, playedAt, durationMs],
+            VALUES (?, ?, ?, ?)`,
+      args: [trackId, playedAt, durationMs, source],
     });
 
     if (listen.listened_at > latestTs) latestTs = listen.listened_at;
@@ -299,8 +312,9 @@ async function fetchListenBrainz(username?: string): Promise<void> {
         created++;
       }
 
+      const source = detectSource(listen);
       const alreadyExists = db!.prepare(
-        `SELECT 1 FROM listening_events WHERE track_id = ? AND played_at = ? AND source = 'listenbrainz' LIMIT 1`
+        `SELECT 1 FROM listening_events WHERE track_id = ? AND played_at = ? LIMIT 1`
       ).get(trackId, playedAt);
 
       if (!alreadyExists) {
@@ -309,7 +323,7 @@ async function fetchListenBrainz(username?: string): Promise<void> {
           const track = db!.prepare(`SELECT duration_ms FROM tracks WHERE id = ?`).get(trackId) as { duration_ms: number } | undefined;
           msPlayed = track?.duration_ms || 0;
         }
-        insertListeningEvent(db!, trackId, playedAt, msPlayed, 'listenbrainz');
+        insertListeningEvent(db!, trackId, playedAt, msPlayed, source);
       }
 
       if (listen.listened_at > latestTs) {

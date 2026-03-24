@@ -1,17 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { usePlayback } from './PlaybackContext'
-import { Music2, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
+import { usePlayback, PlaybackSource } from './PlaybackContext'
+import { Music2, Loader2, AlertCircle } from 'lucide-react'
 
-function formatMs(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+const SOURCE_LABEL: Record<PlaybackSource, string> = {
+  spotify: 'Spotify',
+  navidrome: 'Navidrome',
+  other: 'Playing',
 }
 
-const SPOTIFY_OPEN_URL = 'https://open.spotify.com'
+const SOURCE_COLOR: Record<PlaybackSource, string> = {
+  spotify: 'bg-green-500/20 text-green-400',
+  navidrome: 'bg-orange-500/20 text-orange-400',
+  other: 'bg-muted text-muted-foreground',
+}
 
 const fixedWrapperClass =
   'fixed bottom-4 right-4 z-50 hidden md:flex min-w-[360px] max-w-[400px] overflow-hidden rounded-lg border border-white/10 bg-card/95 shadow-lg backdrop-blur-md'
@@ -19,36 +21,10 @@ const inlineWrapperClass =
   'flex md:hidden w-full overflow-hidden rounded-lg border border-white/10 bg-card/95 shadow-lg backdrop-blur-md'
 
 export default function MiniPlayer({ variant = 'fixed' }: { variant?: 'fixed' | 'inline' }) {
-  const { state, error, loading } = usePlayback()
-  const [interpolatedProgress, setInterpolatedProgress] = useState<number | null>(null)
+  const { playing, error, loading } = usePlayback()
   const wrapperClass = variant === 'inline' ? inlineWrapperClass : fixedWrapperClass
 
-  const item = state?.item
-  const serverProgressMs = state?.progress_ms ?? 0
-  const serverTimestamp = state?.timestamp ?? 0
-
-  useEffect(() => {
-    if (!state?.is_playing || !item) {
-      setInterpolatedProgress(null)
-      return
-    }
-    setInterpolatedProgress(serverProgressMs)
-    const startMs = serverProgressMs
-    const startAt = Date.now()
-    let rafId = 0
-    const tick = () => {
-      const elapsed = Date.now() - startAt
-      const next = Math.min(startMs + elapsed, item.duration_ms)
-      setInterpolatedProgress(next)
-      if (next < item.duration_ms) {
-        rafId = requestAnimationFrame(tick)
-      }
-    }
-    rafId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafId)
-  }, [state?.is_playing, item?.id, item?.duration_ms, serverProgressMs, serverTimestamp])
-
-  if (loading && !state && !error) {
+  if (loading && !playing && !error) {
     return (
       <div className={wrapperClass} aria-label="Now playing">
         <div className="flex items-center gap-3 px-5 py-4 text-muted-foreground">
@@ -59,114 +35,57 @@ export default function MiniPlayer({ variant = 'fixed' }: { variant?: 'fixed' | 
     )
   }
 
-  if (error && !state) {
-    const content = (
-      <>
-        <AlertCircle className="h-6 w-6 flex-shrink-0" />
-        <span className="text-base truncate" title={error}>
-          Playback unavailable
-        </span>
-        {variant !== 'inline' && <ExternalLink className="h-5 w-5 flex-shrink-0 ml-1" />}
-      </>
-    )
-    return variant === 'inline' ? (
+  if (error && !playing) {
+    return (
       <div className={`${wrapperClass} flex items-center gap-3 px-5 py-4 text-muted-foreground`} aria-label="Playback unavailable">
-        {content}
+        <AlertCircle className="h-6 w-6 flex-shrink-0" />
+        <span className="text-base truncate">Playback unavailable</span>
       </div>
-    ) : (
-      <a
-        href={SPOTIFY_OPEN_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${wrapperClass} flex items-center gap-3 px-5 py-4 text-muted-foreground hover:text-foreground transition-colors`}
-        aria-label="Playback unavailable – open Spotify"
-      >
-        {content}
-      </a>
     )
   }
 
-  if (!item || state?.currently_playing_type === 'ad') {
-    const content = (
-      <>
+  if (!playing) {
+    return (
+      <div className={`${wrapperClass} flex items-center gap-3 px-5 py-4 text-muted-foreground`} aria-label="Nothing playing">
         <Music2 className="h-6 w-6 flex-shrink-0" />
         <span className="text-base">Nothing playing</span>
-        {variant !== 'inline' && <ExternalLink className="h-5 w-5 flex-shrink-0 ml-1" />}
-      </>
-    )
-    return variant === 'inline' ? (
-      <div className={`${wrapperClass} flex items-center gap-3 px-5 py-4 text-muted-foreground`} aria-label="Nothing playing">
-        {content}
       </div>
-    ) : (
-      <a
-        href={SPOTIFY_OPEN_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${wrapperClass} flex items-center gap-3 px-5 py-4 text-muted-foreground hover:text-foreground transition-colors`}
-        aria-label="Nothing playing – open Spotify"
-      >
-        {content}
-      </a>
     )
   }
 
-  const progressMs = interpolatedProgress ?? serverProgressMs
-  const progressPercent = item.duration_ms > 0 ? (progressMs / item.duration_ms) * 100 : 0
-  const imageUrl = item.album?.images?.[0]?.url ?? item.album?.images?.[1]?.url
-
   return (
-    <div className={wrapperClass} aria-label="Now playing">
-      <div className="flex min-w-0 flex-1 items-center pl-3">
-        <a
-          href={item.external_urls?.spotify ?? SPOTIFY_OPEN_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative flex-shrink-0 overflow-hidden rounded-lg bg-muted"
-        >
-          {imageUrl ? (
+    <div className={`${wrapperClass} flex-col`} aria-label="Now playing">
+      <div className="px-4 pt-3 pb-2">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Currently playing</p>
+      </div>
+      <div className="flex min-w-0 flex-1 items-center pl-4 pr-4 pb-4 gap-3">
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground overflow-hidden">
+          {playing.cover_art_url ? (
             <img
-              src={imageUrl}
+              src={playing.cover_art_url}
               alt=""
-              className="block h-20 w-20 object-cover"
-              width={80}
-              height={80}
+              className="block h-16 w-16 object-cover"
+              width={64}
+              height={64}
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center text-muted-foreground">
-              <Music2 className="h-8 w-8" />
-            </div>
+            <Music2 className="h-6 w-6" />
           )}
-        </a>
-        <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-          <p className="truncate text-base font-medium text-foreground" title={item.name}>
-            {item.name}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <p className="truncate text-base font-medium text-foreground" title={playing.track_name}>
+            {playing.track_name}
           </p>
           <p className="truncate text-sm text-muted-foreground">
-            {item.artists?.map((a) => a.name).join(', ') || 'Unknown'}
-          </p>
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary/80 transition-all duration-1000"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {formatMs(progressMs)} / {formatMs(item.duration_ms)}
+            {playing.artist_name}
+            {playing.release_name ? ` · ${playing.release_name}` : ''}
           </p>
         </div>
-        {variant !== 'inline' && (
-          <a
-            href={item.external_urls?.spotify ?? SPOTIFY_OPEN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-shrink-0 items-center justify-center px-3 text-muted-foreground hover:text-foreground"
-            aria-label="Open in Spotify"
-          >
-            <ExternalLink className="h-5 w-5" />
-          </a>
-        )}
+        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${SOURCE_COLOR[playing.source]}`}>
+          {SOURCE_LABEL[playing.source]}
+        </span>
       </div>
     </div>
   )
+
 }

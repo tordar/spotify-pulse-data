@@ -82,6 +82,13 @@ export async function GET() {
         `,
         args: [] as unknown[],
       },
+      {
+        sql: `
+          SELECT strftime('%Y', played_at) as year, source, SUM(ms_played) as totalMs
+          FROM listening_events GROUP BY year, source ORDER BY year
+        `,
+        args: [] as unknown[],
+      },
       ...years.flatMap(year => [
         { sql: topSongsSql, args: [year] as unknown[] },
         { sql: topArtistsSql, args: [year] as unknown[] },
@@ -95,9 +102,10 @@ export async function GET() {
     const totals = results[1].rows[0] as unknown as { totalMs: number; totalEvents: number }
     const hourlyRows = results[2].rows as unknown as Array<{ hour: number; totalListeningTimeMs: number; playCount: number }>
     const countryRows = results[3].rows as unknown as Array<{ countryCode: string; totalMsPlayed: number; playCount: number; firstPlayedAt: string; lastPlayedAt: string }>
+    const sourceRows = results[4].rows as unknown as Array<{ year: string; source: string; totalMs: number }>
 
     const yearlyTopItems = years.map((year, i) => {
-      const base = 4 + i * 3
+      const base = 5 + i * 3
       const topSongs = results[base].rows as unknown as Array<{ songId: string | null; name: string; artist: string; image_url: string | null; playCount: number; totalListeningTimeMs: number }>
       const topArtists = results[base + 1].rows as unknown as Array<{ artistName: string; image_url: string | null; playCount: number; totalListeningTimeMs: number; uniqueSongs: number }>
       const topAlbums = results[base + 2].rows as unknown as Array<{ albumName: string; artist: string; image_url: string | null; playCount: number; totalListeningTimeMs: number; uniqueSongs: number }>
@@ -133,14 +141,22 @@ export async function GET() {
     const totalListeningHours = Math.round((totals.totalMs / MS_PER_HOUR) * 100) / 100
     const totalListeningDays = Math.round((totals.totalMs / MS_PER_DAY) * 100) / 100
 
-    const yearlyListeningTime = yearlyRows.map(r => ({
-      year: r.year,
-      totalListeningTimeMs: r.totalListeningTimeMs,
-      totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
-      playCount: r.playCount,
-      totalPodcastListeningTimeMs: 0,
-      totalPodcastListeningHours: 0,
-    }))
+    const yearlyListeningTime = yearlyRows.map(r => {
+      const spotifyMs = sourceRows.find(s => s.year === r.year && s.source === 'spotify')?.totalMs ?? 0
+      const navidromeMs = sourceRows.find(s => s.year === r.year && s.source === 'navidrome')?.totalMs ?? 0
+      return {
+        year: r.year,
+        totalListeningTimeMs: r.totalListeningTimeMs,
+        totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
+        playCount: r.playCount,
+        totalPodcastListeningTimeMs: 0,
+        totalPodcastListeningHours: 0,
+        spotifyMs,
+        navidromeMs,
+        spotifyHours: Math.round((spotifyMs / MS_PER_HOUR) * 100) / 100,
+        navidromeHours: Math.round((navidromeMs / MS_PER_HOUR) * 100) / 100,
+      }
+    })
 
     const hourlyListeningDistribution = Array.from({ length: 24 }, (_, h) => {
       const row = hourlyRows.find(r => r.hour === h)
