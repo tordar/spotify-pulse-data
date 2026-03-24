@@ -386,6 +386,7 @@ export default function StatsPage() {
           const pointIndex = typeof this.x === 'number' ? this.x : (this.index ?? 0)
           const year = categories[pointIndex] || String(this.x)
 
+          const plays = yearlyData[pointIndex]?.playCount ?? 0
           if (this.series.name === 'Estimated (Projected)') {
             const sp = spotifyData[pointIndex] || 0
             const nd = navidromeData[pointIndex] || 0
@@ -396,12 +397,12 @@ export default function StatsPage() {
             const sp = this.y as number
             const nd = navidromeData[pointIndex] || 0
             const total = sp + nd
-            return `<b>${year}</b><br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}${nd > 0 ? `<br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}` : ''}`
+            return `<b>${year}</b><br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}${nd > 0 ? `<br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}` : ''}<br/><span style="color: ${mutedColor}">${plays.toLocaleString()} listens</span>`
           } else if (this.series.name === 'Navidrome') {
             const nd = this.y as number
             const sp = spotifyData[pointIndex] || 0
             const total = sp + nd
-            return `<b>${year}</b><br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}`
+            return `<b>${year}</b><br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}<br/><span style="color: ${mutedColor}">${plays.toLocaleString()} listens</span>`
           } else {
             return `<b>${year}</b><br/>${formatDuration((this.y as number) * 60 * 60 * 1000)}`
           }
