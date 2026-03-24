@@ -40,10 +40,27 @@ export async function GET() {
     const meta = listen.track_metadata ?? {}
     const info = meta.additional_info ?? {}
     const mbids = meta.mbid_mapping ?? {}
-    const caaRelease = mbids.caa_release_mbid ?? mbids.release_mbid ?? info.release_mbid ?? null
-    const cover_art_url = caaRelease
+    const caaRelease = mbids.caa_release_mbid ?? null
+
+    let cover_art_url: string | null = caaRelease
       ? `https://coverartarchive.org/release/${caaRelease}/front-250`
       : null
+
+    if (!cover_art_url && meta.artist_name && (meta.release_name || meta.track_name)) {
+      try {
+        const term = [meta.artist_name, meta.release_name ?? meta.track_name].join(' ')
+        const itunesRes = await fetch(
+          `https://itunes.apple.com/search?${new URLSearchParams({ term, entity: 'album', limit: '1', media: 'music' })}`
+        )
+        if (itunesRes.ok) {
+          const itunesData = await itunesRes.json() as { results?: Array<{ artworkUrl100?: string }> }
+          const art = itunesData.results?.[0]?.artworkUrl100
+          if (art) cover_art_url = art.replace('100x100bb', '250x250bb')
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     const serviceRaw = [
       info.music_service,
