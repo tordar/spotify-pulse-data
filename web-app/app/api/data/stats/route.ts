@@ -84,7 +84,7 @@ export async function GET() {
       },
       {
         sql: `
-          SELECT strftime('%Y', played_at) as year, source, SUM(ms_played) as totalMs
+          SELECT strftime('%Y', played_at) as year, source, SUM(ms_played) as totalMs, COUNT(*) as playCount
           FROM listening_events GROUP BY year, source ORDER BY year
         `,
         args: [] as unknown[],
@@ -102,7 +102,7 @@ export async function GET() {
     const totals = results[1].rows[0] as unknown as { totalMs: number; totalEvents: number }
     const hourlyRows = results[2].rows as unknown as Array<{ hour: number; totalListeningTimeMs: number; playCount: number }>
     const countryRows = results[3].rows as unknown as Array<{ countryCode: string; totalMsPlayed: number; playCount: number; firstPlayedAt: string; lastPlayedAt: string }>
-    const sourceRows = results[4].rows as unknown as Array<{ year: string; source: string; totalMs: number }>
+    const sourceRows = results[4].rows as unknown as Array<{ year: string; source: string; totalMs: number; playCount: number }>
 
     const yearlyTopItems = years.map((year, i) => {
       const base = 5 + i * 3
@@ -142,13 +142,17 @@ export async function GET() {
     const totalListeningDays = Math.round((totals.totalMs / MS_PER_DAY) * 100) / 100
 
     const yearlyListeningTime = yearlyRows.map(r => {
-      const spotifyMs = sourceRows.find(s => s.year === r.year && s.source === 'spotify')?.totalMs ?? 0
-      const navidromeMs = sourceRows.find(s => s.year === r.year && s.source === 'navidrome')?.totalMs ?? 0
+      const spotifyRow = sourceRows.find(s => s.year === r.year && s.source === 'spotify')
+      const navidromeRow = sourceRows.find(s => s.year === r.year && s.source === 'navidrome')
+      const spotifyMs = spotifyRow?.totalMs ?? 0
+      const navidromeMs = navidromeRow?.totalMs ?? 0
       return {
         year: r.year,
         totalListeningTimeMs: r.totalListeningTimeMs,
         totalListeningHours: Math.round((r.totalListeningTimeMs / MS_PER_HOUR) * 100) / 100,
         playCount: r.playCount,
+        spotifyPlayCount: spotifyRow?.playCount ?? 0,
+        navidromePlayCount: navidromeRow?.playCount ?? 0,
         totalPodcastListeningTimeMs: 0,
         totalPodcastListeningHours: 0,
         spotifyMs,

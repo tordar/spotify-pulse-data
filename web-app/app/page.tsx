@@ -20,6 +20,8 @@ interface YearlyListeningTime {
   totalListeningTimeMs: number
   totalListeningHours: number
   playCount: number
+  spotifyPlayCount?: number
+  navidromePlayCount?: number
   totalPodcastListeningTimeMs?: number
   totalPodcastListeningHours?: number
   spotifyMs?: number
@@ -387,25 +389,20 @@ export default function StatsPage() {
           const year = categories[pointIndex] || String(this.x)
 
           const plays = yearlyData[pointIndex]?.playCount ?? 0
-          if (this.series.name === 'Estimated (Projected)') {
-            const sp = spotifyData[pointIndex] || 0
-            const nd = navidromeData[pointIndex] || 0
-            const estimatedAdditional = this.y as number
-            const estimatedTotal = sp + nd + estimatedAdditional
-            return `<b>${year} (Estimated Total)</b><br/>${formatDuration(estimatedTotal * 60 * 60 * 1000)}<br/><span style="color: ${mutedColor}">Projected if current pace continues</span>`
-          } else if (this.series.name === 'Spotify') {
-            const sp = this.y as number
-            const nd = navidromeData[pointIndex] || 0
-            const total = sp + nd
-            return `<b>${year}</b><br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}${nd > 0 ? `<br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}` : ''}<br/><span style="color: ${mutedColor}">${plays.toLocaleString()} listens</span>`
-          } else if (this.series.name === 'Navidrome') {
-            const nd = this.y as number
-            const sp = spotifyData[pointIndex] || 0
-            const total = sp + nd
-            return `<b>${year}</b><br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)}<br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)}<br/>Total: ${formatDuration(total * 60 * 60 * 1000)}<br/><span style="color: ${mutedColor}">${plays.toLocaleString()} listens</span>`
-          } else {
-            return `<b>${year}</b><br/>${formatDuration((this.y as number) * 60 * 60 * 1000)}`
-          }
+          const sp = spotifyData[pointIndex] || 0
+          const nd = navidromeData[pointIndex] || 0
+          const total = sp + nd
+
+          const estimatedAdditional = estimatedData[pointIndex] ?? 0
+          const projectedTotal = estimatedAdditional > 0 ? total + estimatedAdditional : null
+          const spPlays = yearlyData[pointIndex]?.spotifyPlayCount ?? 0
+          const ndPlays = yearlyData[pointIndex]?.navidromePlayCount ?? 0
+
+          let tip = `<b>${year}</b><br/>Spotify: ${formatDuration(sp * 60 * 60 * 1000)} / ${spPlays.toLocaleString()} listens`
+          if (nd > 0) tip += `<br/>Navidrome: ${formatDuration(nd * 60 * 60 * 1000)} / ${ndPlays.toLocaleString()} listens`
+          if (nd > 0 || projectedTotal) tip += `<br/>Total: ${formatDuration(total * 60 * 60 * 1000)} / ${plays.toLocaleString()} listens`
+          if (projectedTotal) tip += `<br/>Projected: ${formatDuration(projectedTotal * 60 * 60 * 1000)}`
+          return tip
         }
       },
       plotOptions: {
