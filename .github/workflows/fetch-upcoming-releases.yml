@@ -28,4 +28,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LISTENBRAINZ_USERNAME: ${{ secrets.LISTENBRAINZ_USERNAME }}
+          LISTENBRAINZ_TOKEN: ${{ secrets.LISTENBRAINZ_TOKEN }}
         run: npm run db:fetch-upcoming-releases
