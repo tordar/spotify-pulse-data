@@ -46,6 +46,8 @@ data/pending-plays/imported/*.json
 data/sldl-input.csv
 data/sldl-results.m3u8
 data/unmatched-files.json
+data/lb-export-checkpoint.json
+data/repaired-listen-ids.json
 
 # IDE files
 .vscode/

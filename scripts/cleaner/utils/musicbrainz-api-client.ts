@@ -3,16 +3,23 @@ const MB_USER_AGENT = 'spotify-pulse/1.0 (https://github.com/tordar/spotify-puls
 const RATE_LIMIT_MS = 1100;
 const MAX_RETRIES = 3;
 
+let lastRequestTime = 0;
+
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function mbFetch(url: string): Promise<Response | null> {
+  const elapsed = Date.now() - lastRequestTime;
+  if (elapsed < RATE_LIMIT_MS) {
+    await sleep(RATE_LIMIT_MS - elapsed);
+  }
+
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    lastRequestTime = Date.now();
     try {
       const res = await fetch(url, { headers: { 'User-Agent': MB_USER_AGENT } });
       if (res.status === 429) {
-        // Rate limited — wait longer and retry
         await sleep(5000 * (attempt + 1));
         continue;
       }
@@ -31,7 +38,6 @@ async function mbFetch(url: string): Promise<Response | null> {
 }
 
 async function mbUrlLookup(spotifyUrl: string, inc: string): Promise<any> {
-  await sleep(RATE_LIMIT_MS);
   const params = new URLSearchParams({ resource: spotifyUrl, inc, fmt: 'json' });
   const res = await mbFetch(`${MB_BASE}/url?${params}`);
   if (!res || res.status === 404) return null;
@@ -40,7 +46,6 @@ async function mbUrlLookup(spotifyUrl: string, inc: string): Promise<any> {
 }
 
 export async function lookupTrackMbid(spotifyTrackId: string): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const data = await mbUrlLookup(
     `https://open.spotify.com/track/${spotifyTrackId}`,
     'recording-rels',
@@ -50,7 +55,6 @@ export async function lookupTrackMbid(spotifyTrackId: string): Promise<string | 
 }
 
 export async function lookupArtistMbid(spotifyArtistId: string): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const data = await mbUrlLookup(
     `https://open.spotify.com/artist/${spotifyArtistId}`,
     'artist-rels',
@@ -60,7 +64,6 @@ export async function lookupArtistMbid(spotifyArtistId: string): Promise<string 
 }
 
 async function fetchReleaseGroupId(releaseMbid: string): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const res = await mbFetch(`${MB_BASE}/release/${releaseMbid}?inc=release-groups&fmt=json`);
   if (!res?.ok) return null;
   const data: any = await res.json();
@@ -68,7 +71,6 @@ async function fetchReleaseGroupId(releaseMbid: string): Promise<string | null> 
 }
 
 export async function lookupAlbumMbids(spotifyAlbumId: string): Promise<{ releaseId: string; releaseGroupId: string | null } | null> {
-  await sleep(RATE_LIMIT_MS);
   const data = await mbUrlLookup(
     `https://open.spotify.com/album/${spotifyAlbumId}`,
     'release-rels',
@@ -85,7 +87,6 @@ export async function searchMusicBrainzRelease(
   albumName: string,
   artistName: string,
 ): Promise<{ releaseId: string; releaseGroupId: string | null } | null> {
-  await sleep(RATE_LIMIT_MS);
   const query = encodeURIComponent(`release:"${albumName}" AND artist:"${artistName}"`);
   const res = await mbFetch(`${MB_BASE}/release?query=${query}&fmt=json&limit=5`);
   if (!res?.ok) return null;
@@ -102,7 +103,6 @@ export async function searchMusicBrainzRelease(
 export async function searchMusicBrainzArtist(
   artistName: string,
 ): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const query = encodeURIComponent(`artist:"${artistName}"`);
   const res = await mbFetch(`${MB_BASE}/artist?query=${query}&fmt=json&limit=5`);
   if (!res?.ok) return null;
@@ -115,7 +115,6 @@ export async function searchMusicBrainzRecording(
   trackName: string,
   artistName: string,
 ): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const query = encodeURIComponent(`recording:"${trackName}" AND artist:"${artistName}"`);
   const res = await mbFetch(`${MB_BASE}/recording?query=${query}&fmt=json&limit=5`);
   if (!res?.ok) return null;
@@ -127,7 +126,6 @@ export async function searchMusicBrainzRecording(
 export async function getSpotifyIdFromRelease(
   mbReleaseId: string,
 ): Promise<string | null> {
-  await sleep(RATE_LIMIT_MS);
   const url = `${MB_BASE}/release/${mbReleaseId}?inc=url-rels&fmt=json`;
   const res = await mbFetch(url);
   if (!res?.ok) return null;
@@ -140,4 +138,35 @@ export async function getSpotifyIdFromRelease(
 
   const match = spotifyRel.url.resource.match(/album\/([a-zA-Z0-9]+)/);
   return match?.[1] ?? null;
+}
+
+export interface MbRecording {
+  id: string;
+  title: string;
+  lengthMs: number | null;
+}
+
+/** Fetch all recordings on a MusicBrainz release (all media/discs). */
+export async function getRecordingsFromRelease(
+  releaseMbid: string,
+): Promise<MbRecording[] | null> {
+  const res = await mbFetch(`${MB_BASE}/release/${releaseMbid}?inc=recordings&fmt=json`);
+  if (!res?.ok) return null;
+  const data: any = await res.json();
+  const media = data?.media;
+  if (!Array.isArray(media)) return null;
+
+  const recordings: MbRecording[] = [];
+  for (const medium of media) {
+    for (const track of medium.tracks ?? []) {
+      if (track.recording?.id) {
+        recordings.push({
+          id: track.recording.id,
+          title: track.recording.title ?? track.title,
+          lengthMs: track.recording.length ?? track.length ?? null,
+        });
+      }
+    }
+  }
+  return recordings;
 }

@@ -56,7 +56,9 @@
     "commander": "^11.1.0",
     "dotenv": "^16.0.0",
     "glob": "^10.3.10",
-    "music-metadata": "^11.12.1"
+    "music-metadata": "^11.12.1",
+    "node-id3": "^0.2.9",
+    "node-taglib-sharp": "^6.0.1"
   },
   "engines": {
     "node": ">=20.0.0"

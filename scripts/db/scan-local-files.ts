@@ -9,6 +9,12 @@ import {
   upsertAlbum,
   upsertTrack,
 } from './database';
+import {
+  searchMusicBrainzArtist,
+  searchMusicBrainzRelease,
+  getRecordingsFromRelease,
+  type MbRecording,
+} from '../cleaner/utils/musicbrainz-api-client';
 
 const AUDIO_EXTENSIONS = new Set([
   '.mp3', '.flac', '.ogg', '.opus', '.m4a', '.aac', '.wav', '.wma', '.alac', '.aiff', '.ape', '.wv',
@@ -50,6 +56,45 @@ function stripArtistNumber(s: string): string {
 function titleFromFilename(filename: string): string {
   const name = path.basename(filename, path.extname(filename));
   return stripTrackNumber(name);
+}
+
+function normalizeForMbMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[^\w\s']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchRecordingToTrack(
+  trackName: string,
+  trackDurationMs: number,
+  recordings: MbRecording[],
+  usedIds: Set<string>,
+): MbRecording | null {
+  const normTrack = normalizeForMbMatch(trackName);
+  let best: MbRecording | null = null;
+  let bestScore = 0;
+
+  for (const rec of recordings) {
+    if (usedIds.has(rec.id)) continue;
+    const normRec = normalizeForMbMatch(rec.title);
+
+    let score = 0;
+    if (normRec === normTrack) score = 4;
+    else if (normRec.startsWith(normTrack) || normTrack.startsWith(normRec)) score = 3;
+    else if (normRec.includes(normTrack) || normTrack.includes(normRec)) score = 2;
+
+    if (score > 0 && trackDurationMs > 0 && rec.lengthMs) {
+      if (Math.abs(rec.lengthMs - trackDurationMs) < 3000) score += 1;
+    }
+
+    if (score > bestScore) { bestScore = score; best = rec; }
+  }
+
+  return bestScore >= 3 ? best : null;
 }
 
 function walkDir(dir: string): string[] {
@@ -149,10 +194,17 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
   }
 
   console.log(`Scanning ${musicDir} for audio files...`);
-  const allFiles = walkDir(musicDir);
-  console.log(`Found ${allFiles.length.toLocaleString()} audio files`);
+  const allFilesRaw = walkDir(musicDir);
 
   const db = getDatabase();
+
+  // Skip files already in the DB
+  const knownPaths = new Set(
+    (db.prepare('SELECT local_file_path FROM tracks WHERE local_file_path IS NOT NULL').all() as Array<{ local_file_path: string }>)
+      .map(r => r.local_file_path)
+  );
+  const allFiles = allFilesRaw.filter(f => !knownPaths.has(f));
+  console.log(`Found ${allFilesRaw.length.toLocaleString()} audio files (${allFiles.length.toLocaleString()} new, ${(allFilesRaw.length - allFiles.length).toLocaleString()} already in DB)`);
 
   // Pre-build a normalized lookup for faster fuzzy matching
   const allUnmatchedTracks = db.prepare(`
@@ -174,8 +226,10 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
   }
 
   const matchedIds = new Set<number>();
+  const newArtistIds = new Set<number>();
+  const newAlbumIds = new Set<number>();
   const result: ScanResult = {
-    totalFiles: allFiles.length,
+    totalFiles: allFilesRaw.length,
     matchedToDb: 0,
     addedAsCatalog: 0,
     skippedNonAudio: 0,
@@ -270,8 +324,16 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
       result.matchedToDb++;
     } else {
       // Add as new catalog track
-      const artistId = upsertArtist(db, artist || 'Unknown Artist');
-      const albumId = upsertAlbum(db, album || 'Unknown Album', artist || 'Unknown Artist');
+      const artistName = artist || 'Unknown Artist';
+      const albumName = album || 'Unknown Album';
+      const existingArtist = db.prepare('SELECT id FROM artists WHERE name = ? COLLATE NOCASE').get(artistName) as { id: number } | undefined;
+      const artistId = upsertArtist(db, artistName);
+      if (!existingArtist) newArtistIds.add(artistId);
+
+      const existingAlbum = db.prepare('SELECT id FROM albums WHERE name = ? COLLATE NOCASE AND artist_name = ? COLLATE NOCASE').get(albumName, artistName) as { id: number } | undefined;
+      const albumId = upsertAlbum(db, albumName, artistName);
+      if (!existingAlbum) newAlbumIds.add(albumId);
+
       const newTrackId = upsertTrack(db, {
         name: title,
         albumId,
@@ -358,6 +420,113 @@ async function scanLocalFiles(musicDir: string): Promise<void> {
   console.log('\n  Download status after scan:');
   for (const row of statusBreakdown) {
     console.log(`    ${row.download_status}: ${row.c.toLocaleString()}`);
+  }
+
+  // ═══ MusicBrainz enrichment for newly added items ═════════════════════════
+
+  if (newArtistIds.size > 0 || newAlbumIds.size > 0) {
+    console.log(`\nEnriching MusicBrainz IDs for ${newArtistIds.size} new artists, ${newAlbumIds.size} new albums...`);
+
+    const updateArtistMb = db.prepare(
+      `UPDATE artists SET musicbrainz_id = ?, updated_at = datetime('now') WHERE id = ?`
+    );
+    const updateAlbumMb = db.prepare(
+      `UPDATE albums SET musicbrainz_id = ?, musicbrainz_release_group_id = ?, updated_at = datetime('now') WHERE id = ?`
+    );
+    const updateTrackMb = db.prepare(
+      `UPDATE tracks SET musicbrainz_id = ?, updated_at = datetime('now') WHERE id = ?`
+    );
+
+    // Enrich artists — first check if a duplicate in the DB already has an MB ID
+    let artistEnriched = 0;
+    for (const artistId of newArtistIds) {
+      const row = db.prepare('SELECT name FROM artists WHERE id = ?').get(artistId) as { name: string } | undefined;
+      if (!row) continue;
+
+      const existing = db.prepare(
+        'SELECT musicbrainz_id FROM artists WHERE name = ? COLLATE NOCASE AND musicbrainz_id IS NOT NULL AND id != ?'
+      ).get(row.name, artistId) as { musicbrainz_id: string } | undefined;
+
+      if (existing) {
+        updateArtistMb.run(existing.musicbrainz_id, artistId);
+        artistEnriched++;
+        continue;
+      }
+
+      const mbid = await searchMusicBrainzArtist(row.name);
+      if (mbid) {
+        updateArtistMb.run(mbid, artistId);
+        artistEnriched++;
+      }
+    }
+
+    // Enrich albums — first check if a duplicate in the DB already has an MB ID
+    let albumEnriched = 0;
+    for (const albumId of newAlbumIds) {
+      const row = db.prepare('SELECT name, artist_name FROM albums WHERE id = ?').get(albumId) as { name: string; artist_name: string } | undefined;
+      if (!row) continue;
+
+      const existing = db.prepare(
+        'SELECT musicbrainz_id, musicbrainz_release_group_id FROM albums WHERE name = ? COLLATE NOCASE AND artist_name = ? COLLATE NOCASE AND musicbrainz_id IS NOT NULL AND id != ?'
+      ).get(row.name, row.artist_name, albumId) as { musicbrainz_id: string; musicbrainz_release_group_id: string | null } | undefined;
+
+      if (existing) {
+        updateAlbumMb.run(existing.musicbrainz_id, existing.musicbrainz_release_group_id, albumId);
+        albumEnriched++;
+        continue;
+      }
+
+      const mbResult = await searchMusicBrainzRelease(row.name, row.artist_name);
+      if (mbResult) {
+        updateAlbumMb.run(mbResult.releaseId, mbResult.releaseGroupId, albumId);
+        albumEnriched++;
+      }
+    }
+
+    // Enrich tracks via album recordings
+    let trackEnriched = 0;
+    const enrichedAlbums = db.prepare(`
+      SELECT id, musicbrainz_id FROM albums WHERE id IN (${[...newAlbumIds].join(',')}) AND musicbrainz_id IS NOT NULL
+    `).all() as Array<{ id: number; musicbrainz_id: string }>;
+
+    for (const album of enrichedAlbums) {
+      const tracks = db.prepare(
+        'SELECT id, name, duration_ms FROM tracks WHERE album_id = ? AND musicbrainz_id IS NULL'
+      ).all(album.id) as Array<{ id: number; name: string; duration_ms: number }>;
+      if (tracks.length === 0) continue;
+
+      const recordings = await getRecordingsFromRelease(album.musicbrainz_id);
+      if (!recordings || recordings.length === 0) continue;
+
+      const usedIds = new Set<string>();
+      const matched: Array<{ trackId: number; mbid: string }> = [];
+
+      for (const track of tracks) {
+        const rec = matchRecordingToTrack(track.name, track.duration_ms, recordings, usedIds);
+        if (rec) {
+          usedIds.add(rec.id);
+          matched.push({ trackId: track.id, mbid: rec.id });
+        }
+      }
+
+      // Last-remaining auto-match
+      const unmatchedLocal = tracks.filter(t => !matched.some(m => m.trackId === t.id));
+      const unmatchedRecs = recordings.filter(r => !usedIds.has(r.id));
+      if (unmatchedLocal.length === 1 && unmatchedRecs.length === 1) {
+        matched.push({ trackId: unmatchedLocal[0].id, mbid: unmatchedRecs[0].id });
+      }
+
+      if (matched.length > 0) {
+        db.transaction(() => {
+          for (const m of matched) updateTrackMb.run(m.mbid, m.trackId);
+        })();
+        trackEnriched += matched.length;
+      }
+    }
+
+    console.log(`  Artists: ${artistEnriched}/${newArtistIds.size}`);
+    console.log(`  Albums:  ${albumEnriched}/${newAlbumIds.size}`);
+    console.log(`  Tracks:  ${trackEnriched} (via album recordings)`);
   }
 
   closeDatabase();
