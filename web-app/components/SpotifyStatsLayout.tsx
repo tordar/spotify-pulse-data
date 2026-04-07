@@ -132,7 +132,7 @@ export default function SpotifyStatsLayout({
 
               {/* Condensed Title - Hidden on very small screens, shown on md+ */}
               <div className="flex-shrink-0 min-w-0 hidden md:block">
-                <h2 className="text-lg sm:text-xl font-bold truncate max-w-[150px] sm:max-w-none">{title}</h2>
+                <p className="text-lg sm:text-xl font-bold truncate max-w-[150px] sm:max-w-none">{title}</p>
               </div>
 
               {/* Navigation - Compact Mode - Hidden on mobile, shown on desktop */}
@@ -154,8 +154,9 @@ export default function SpotifyStatsLayout({
                   size="sm"
                   onClick={() => setMobileMenuOpen(true)}
                   className="mobile-menu-button md:hidden h-11 w-11 p-0 flex-shrink-0"
+                  aria-label="Open menu"
                 >
-                  <Menu className="w-6 h-6" />
+                  <Menu className="w-6 h-6" aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -188,9 +189,10 @@ export default function SpotifyStatsLayout({
                     <button
                       type="button"
                       onClick={() => setSearchTerm('')}
+                      aria-label="Clear search"
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -217,7 +219,7 @@ export default function SpotifyStatsLayout({
         </div>
         
         {/* Content */}
-        {children}
+        <main>{children}</main>
       </div>
     </div>
   )

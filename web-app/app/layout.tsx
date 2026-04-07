@@ -14,6 +14,25 @@ const ICON_VERSION = '3'
 export const metadata = {
   title: 'Spotify Pulse',
   description: 'Your Spotify listening: historic, current, and daily insights',
+  metadataBase: new URL('https://spotify-pulse-data.vercel.app'),
+  openGraph: {
+    title: 'Spotify Pulse',
+    description: 'Your Spotify listening: historic, current, and daily insights',
+    type: 'website',
+    siteName: 'Spotify Pulse',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Spotify Pulse',
+    description: 'Your Spotify listening: historic, current, and daily insights',
+  },
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     // PNG first so Chrome on mobile picks it (Chrome often ignores SVG favicons)
     icon: [

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://spotify-pulse-data.vercel.app/sitemap.xml
