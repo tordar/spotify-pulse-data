@@ -1,5 +1,7 @@
-# Spotify Data Sync – fetches recent plays and writes them into Turso
-name: Spotify Data Sync
+# Spotify Metadata Refresh – upserts spotify_id / image_url for tracks the user
+# has played recently. Listening events are sourced from ListenBrainz (see
+# sync-listenbrainz.yml) — this workflow only enriches catalog metadata.
+name: Spotify Metadata Refresh
 
 on:
   schedule:
@@ -23,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch recent Spotify plays → D1
+      - name: Refresh Spotify metadata in D1
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}

@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS listening_events (
   platform      TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_unique ON listening_events(track_id, played_at, source);
 CREATE INDEX IF NOT EXISTS idx_events_track_played ON listening_events(track_id, played_at);
 CREATE INDEX IF NOT EXISTS idx_events_source_played ON listening_events(source, played_at);
 CREATE INDEX IF NOT EXISTS idx_events_played_at ON listening_events(played_at);

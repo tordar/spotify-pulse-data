@@ -8,8 +8,6 @@ import {
   upsertArtist,
   upsertAlbum,
   upsertTrack,
-  insertListeningEvent,
-  logImport,
 } from './db/database';
 import { getD1Client, type D1Client } from './db/d1-client';
 
@@ -146,27 +144,12 @@ class SpotifyRecentPlaysFetcher {
     return data.items;
   }
 
-  insertPlaysIntoDb(plays: SpotifyPlay[]): number {
+  enrichMetadataLocal(plays: SpotifyPlay[]): number {
     const db = getDatabase();
 
-    // Get the latest existing event timestamp to avoid duplicates
-    const latest = db.prepare(`
-      SELECT MAX(played_at) as latest FROM listening_events WHERE source = 'spotify'
-    `).get() as { latest: string | null } | undefined;
-
-    const cutoff = latest?.latest ? new Date(latest.latest).getTime() : 0;
-
-    const newPlays = plays.filter(p => new Date(p.played_at).getTime() > cutoff);
-    if (newPlays.length === 0) {
-      console.log('No new plays to insert (all already in DB)');
-      closeDatabase();
-      return 0;
-    }
-
-    let inserted = 0;
-
+    let enriched = 0;
     db.transaction(() => {
-      for (const play of newPlays) {
+      for (const play of plays) {
         const track = play.track;
         const primaryArtist = track.artists[0]?.name || 'Unknown Artist';
         const albumName = track.album?.name || 'Unknown Album';
@@ -186,7 +169,6 @@ class SpotifyRecentPlaysFetcher {
           spotifyId: track.id,
         });
 
-        // Add featured artists
         for (let i = 1; i < track.artists.length; i++) {
           const featArtistId = upsertArtist(db, track.artists[i].name, track.artists[i].id);
           db.prepare(
@@ -197,31 +179,23 @@ class SpotifyRecentPlaysFetcher {
           `INSERT OR IGNORE INTO track_artists (track_id, artist_id, role) VALUES (?, ?, 'primary')`
         ).run(trackId, artistId);
 
-        insertListeningEvent(db, trackId, play.played_at, track.duration_ms, 'spotify');
-        inserted++;
-
-        const artists = track.artists.map(a => a.name).join(', ');
-        console.log(`  Inserted: ${track.name} - ${artists}`);
+        enriched++;
       }
     })();
 
-    if (inserted > 0) {
-      logImport(db, 'spotify-recent', new Date().toISOString(), inserted);
-    }
-
-    console.log(`Inserted ${inserted} new listening events into SQLite`);
+    console.log(`Refreshed Spotify metadata for ${enriched} recently-played tracks`);
     closeDatabase();
-    return inserted;
+    return enriched;
   }
 
-  async syncPlaysToD1(plays: SpotifyPlay[]): Promise<void> {
+  async enrichMetadataD1(plays: SpotifyPlay[]): Promise<void> {
     const remote = getRemoteClient();
     if (!remote) {
-      console.log('D1 env vars not set — skipping D1 sync');
+      console.log('D1 env vars not set — skipping metadata refresh');
       return;
     }
 
-    console.log(`Syncing ${plays.length} plays to D1...`);
+    console.log(`Refreshing Spotify metadata for ${plays.length} tracks in D1...`);
 
     for (const play of plays) {
       const track = play.track;
@@ -253,7 +227,7 @@ class SpotifyRecentPlaysFetcher {
       });
       const albumId = Number(albumResult.rows[0]?.id);
 
-      const trackResult = await remote.execute({
+      await remote.execute({
         sql: `INSERT INTO tracks (name, album_id, artist_id, duration_ms, spotify_id)
               VALUES (?, ?, ?, ?, ?)
               ON CONFLICT(spotify_id) WHERE spotify_id IS NOT NULL DO UPDATE SET
@@ -261,20 +235,12 @@ class SpotifyRecentPlaysFetcher {
                 album_id   = excluded.album_id,
                 artist_id  = excluded.artist_id,
                 duration_ms = excluded.duration_ms,
-                updated_at = datetime('now')
-              RETURNING id`,
+                updated_at = datetime('now')`,
         args: [track.name, albumId, artistId, track.duration_ms, track.id ?? null],
-      });
-      const trackId = Number(trackResult.rows[0]?.id);
-
-      await remote.execute({
-        sql: `INSERT OR IGNORE INTO listening_events (track_id, played_at, ms_played, source)
-              VALUES (?, ?, ?, 'spotify')`,
-        args: [trackId, play.played_at, track.duration_ms],
       });
     }
 
-    console.log(`D1 sync complete.`);
+    console.log(`D1 metadata refresh complete.`);
   }
 
   private writeFetchResult(hasNewTracks: boolean): void {
@@ -306,18 +272,21 @@ class SpotifyRecentPlaysFetcher {
 
       const plays = await this.fetchRecentPlays();
 
-      let inserted: number;
+      // Listening events are sourced from ListenBrainz (which scrobbles Spotify
+      // and Navidrome with millisecond precision and submission_client tags).
+      // This script only refreshes Spotify metadata (spotify_id, image_url) for
+      // recently-played tracks/albums/artists — it no longer writes to listening_events.
+      let touched: number;
       if (ci) {
-        await this.syncPlaysToD1(plays);
-        inserted = plays.length;
+        await this.enrichMetadataD1(plays);
+        touched = plays.length;
       } else {
-        // Local: write only to SQLite — run db:sync-d1 when ready to publish
-        inserted = this.insertPlaysIntoDb(plays);
+        touched = this.enrichMetadataLocal(plays);
       }
 
-      this.writeFetchResult(inserted > 0);
-      console.log('Recent plays fetch completed successfully!');
-      return inserted;
+      this.writeFetchResult(touched > 0);
+      console.log('Spotify metadata refresh completed successfully!');
+      return touched;
     } catch (error) {
       console.error('Recent plays fetch failed:', error);
       this.writeFetchResult(false);
